@@ -21,7 +21,8 @@ void readFile( const char * fname, char ** buffer ){
 	(*buffer) = (char *)calloc( size+1, sizeof(char) );
 	if( !(*buffer) ){
 		fclose(fp);
-		fprintf( stderr, "Failed to allocate memory for read of file %s in function %s, line %d of file %s\n",
+		fprintf( stderr, "Failed to allocate memory for read of "
+				 "file %s in function %s, line %d of file %s\n",
 			 fname, __func__, __LINE__, __FILE__ );
 		exit(1);
 	}
@@ -41,22 +42,20 @@ void readFile( const char * fname, char ** buffer ){
 }
 
 
-void load( struct Shader * self, char * vertexPath, char * fragmentPath ){
-
+void load( struct Shader * self, char * vertexPath, char * fragmentPath )
+{
 	char * vShaderText = NULL;
 	readFile( vertexPath, &vShaderText );
 	if (vShaderText == NULL){
 		fputs("Vertex shader text read failure", stderr);
 		exit(1);
 	}
-
 	char * fShaderText = NULL;
 	readFile( fragmentPath, &fShaderText );
 	if (fShaderText == NULL){
 		fputs("Fragment shader text read failure", stderr);
 		exit(1);
 	}
-
 	const char ** vShaderCode = NULL;
 	vShaderCode = &vShaderText;
 	const char ** fShaderCode = NULL;
@@ -86,11 +85,13 @@ void load( struct Shader * self, char * vertexPath, char * fragmentPath ){
         glLinkProgram(ID);
         checkCompileErrors(ID, "PROGRAM");
 	(*self).ID = ID;
-        // delete the shaders as they're linked into our program now and no longer necessary
+        /* delete the shaders as they're linked into our
+         * program now and no longer necessary
+         */
         glDeleteShader(vertex);
         glDeleteShader(fragment);
-	free( vShaderText );
-	free( fShaderText );
+	free(vShaderText);
+	free(fShaderText);
 }
 
 
@@ -145,14 +146,16 @@ void checkCompileErrors( unsigned int shader, char * type ){
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 		if (!success){
 			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-			printf( "SHADER_COMPILATION_ERROR of type: %s\n%s\n", type, infoLog );
+			printf("SHADER_COMPILATION_ERROR of type: %s\n%s\n",
+			       type, infoLog );
 		}
         }
         else{
 		glGetProgramiv(shader, GL_LINK_STATUS, &success);
 		if (!success){
 			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-			printf( "PROGRAM_LINKING_ERROR of type: %s\n%s\n", type, infoLog );
+			printf("PROGRAM_LINKING_ERROR of type: %s\n%s\n",
+			       type, infoLog );
 		}
         }
 };

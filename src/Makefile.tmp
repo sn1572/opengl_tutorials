@@ -1,0 +1,15 @@
+CC = gcc
+CFLAGS = 
+DEPS = shader.c
+OBJ = shader.o
+
+%.o %.cu $(DEPS)
+	$(CC) -g -c -fpic $@ $< $(CFLAGS) --compiler-options -fPIC
+
+libshader.so: $(OBJ)
+	$(CC) -o $@ $^ -shared
+
+.PHONY: clean
+
+clean:
+	rm shader.o

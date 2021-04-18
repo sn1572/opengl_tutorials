@@ -1,0 +1,13 @@
+camera.c: In function ‘cameraInit’:
+camera.c:195:4: warning: assignment to ‘size_t’ {aka ‘long unsigned int’} from ‘float (*)[3]’ makes integer from pointer without a cast [-Wint-conversion]
+  195 |  p = out->position;
+      |    ^
+camera.c:196:4: warning: assignment to ‘size_t’ {aka ‘long unsigned int’} from ‘float (*)[3]’ makes integer from pointer without a cast [-Wint-conversion]
+  196 |  f = out->front;
+      |    ^
+camera.c:197:4: warning: assignment to ‘size_t’ {aka ‘long unsigned int’} from ‘float (*)[3]’ makes integer from pointer without a cast [-Wint-conversion]
+  197 |  u = out->up;
+      |    ^
+camera.c:198:4: warning: assignment to ‘size_t’ {aka ‘long unsigned int’} from ‘float (*)[3]’ makes integer from pointer without a cast [-Wint-conversion]
+  198 |  r = out->right;
+      |    ^

@@ -2,39 +2,39 @@
 #include <stdio.h>
 
 
-void readFile( const char * fname, char ** buffer ){
+void readFile(const char * fname, char ** buffer){
 	// buffer does not need to be pre-allocated
 	FILE * fp;
 	long size;
 
-	fp = fopen ( fname, "rb" );
-	if( !fp ){
+	fp = fopen (fname, "rb");
+	if(!fp){
 		perror("readFile");
 		exit(1);
 	}
 
-	fseek( fp , 0L , SEEK_END);
-	size = ftell( fp );
-	rewind( fp );
+	fseek(fp , 0L , SEEK_END);
+	size = ftell(fp);
+	rewind(fp);
 
 	/* allocate memory for entire content */
-	(*buffer) = (char *)calloc( size+1, sizeof(char) );
-	if( !(*buffer) ){
+	*buffer = calloc(size+1, sizeof(char));
+	if(!(*buffer)){
 		fclose(fp);
-		fprintf( stderr, "Failed to allocate memory for read of "
-				 "file %s in function %s, line %d of file %s\n",
-			 fname, __func__, __LINE__, __FILE__ );
+		fprintf(stderr, "Failed to allocate memory for read of "
+				"file %s in function %s, line %d of file %s\n",
+			    fname, __func__, __LINE__, __FILE__);
 		exit(1);
 	}
 
 	/* copy the file into the buffer */
-	if( 1 != fread( (*buffer), size, 1, fp ) ){
+	if(1 != fread((*buffer), size, 1, fp)){
 		fclose(fp);
 		free((*buffer));
 		fputs("File read failure", stderr);
 		exit(1);
 	}
-	
+
 	// NUL terminate the buffer
 	(*buffer)[size] = '\0';
 
@@ -42,16 +42,16 @@ void readFile( const char * fname, char ** buffer ){
 }
 
 
-void load( struct Shader * self, char * vertexPath, char * fragmentPath )
+void load(struct Shader * self, char * vertexPath, char * fragmentPath)
 {
 	char * vShaderText = NULL;
-	readFile( vertexPath, &vShaderText );
+	readFile(vertexPath, &vShaderText);
 	if (vShaderText == NULL){
 		fputs("Vertex shader text read failure", stderr);
 		exit(1);
 	}
 	char * fShaderText = NULL;
-	readFile( fragmentPath, &fShaderText );
+	readFile(fragmentPath, &fShaderText);
 	if (fShaderText == NULL){
 		fputs("Fragment shader text read failure", stderr);
 		exit(1);
@@ -61,69 +61,72 @@ void load( struct Shader * self, char * vertexPath, char * fragmentPath )
 	const char ** fShaderCode = NULL;
 	fShaderCode = &fShaderText;
 
-        unsigned int vertex, fragment;
-        // vertex shader
-        vertex = glCreateShader(GL_VERTEX_SHADER);
-	if ( glGetError() != GL_NO_ERROR ){
+    unsigned int vertex, fragment;
+    // vertex shader
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+	if (glGetError() != GL_NO_ERROR){
 		printf("shader creation failed\n");
 	}
-        glShaderSource(vertex, 1, vShaderCode, NULL);
-	if ( glGetError() != GL_NO_ERROR ){
+    glShaderSource(vertex, 1, vShaderCode, NULL);
+	if (glGetError() != GL_NO_ERROR){
 		printf("shader source assignment failed\n");
 	}
-        glCompileShader(vertex);
-        checkCompileErrors(vertex, "VERTEX");
-        // fragment Shader
-        fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, 1, fShaderCode, NULL);
-        glCompileShader(fragment);
-        checkCompileErrors(fragment, "FRAGMENT");
-        // shader Program
-        GLint ID = glCreateProgram();
-        glAttachShader(ID, vertex);
-        glAttachShader(ID, fragment);
-        glLinkProgram(ID);
-        checkCompileErrors(ID, "PROGRAM");
+    glCompileShader(vertex);
+    checkCompileErrors(vertex, "VERTEX");
+    // fragment Shader
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, fShaderCode, NULL);
+    glCompileShader(fragment);
+    checkCompileErrors(fragment, "FRAGMENT");
+    // shader Program
+    GLint ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
+    checkCompileErrors(ID, "PROGRAM");
 	(*self).ID = ID;
-        /* delete the shaders as they're linked into our
-         * program now and no longer necessary
-         */
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
+    /* delete the shaders as they're linked into our
+     * program now and no longer necessary
+     */
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
 	free(vShaderText);
 	free(fShaderText);
 }
 
 
-void use( struct Shader * self ){
-        glUseProgram( (*self).ID ); 
+void use(struct Shader * self){
+    glUseProgram((*self).ID); 
 }
 
 
-void setBool( struct Shader * self, const char * name, int value ){
-	glUniform1i( glGetUniformLocation( (*self).ID, name ), (int)value ); 
+void setBool(struct Shader * self, const char * name, int value){
+	glUniform1i(glGetUniformLocation((*self).ID, name), (int)value); 
 }
 
 
-void setInt( struct Shader * self, const char * name, int value ){
-	glUniform1i( glGetUniformLocation( (*self).ID, name ), value ); 
+void setInt(struct Shader * self, const char * name, int value){
+	glUniform1i(glGetUniformLocation((*self).ID, name), value); 
 }
 
 
-void setFloat( struct Shader * self, const char * name, float value ){
-	glUniform1f( glGetUniformLocation( (*self).ID, name ), value ); 
+void setFloat(struct Shader * self, const char * name, float value){
+	glUniform1f(glGetUniformLocation((*self).ID, name), value); 
 }
 
 
-void setVec3( struct Shader * self, const char * name, float x, float y, float z ){
+void setVec3(struct Shader * self, const char * name, float x, float y,
+    float z)
+{
 	//float vec[] = {x,y,z};
-	glUniform3f( glGetUniformLocation( (*self).ID, name ), x, y, z ); 
+	glUniform3f(glGetUniformLocation((*self).ID, name), x, y, z); 
 }
 
 
-struct Shader * shaderInit(){
+struct Shader * shaderInit()
+{
 	struct Shader * out = NULL;
-	out = (struct Shader *)calloc( 1, sizeof( struct Shader ) );
+	out = calloc(1, sizeof(struct Shader));
 	if (out == NULL){
 		fprintf(stderr, "calloc failure in %s, file %s\n", __func__, __FILE__);
 		exit(1);
@@ -139,40 +142,40 @@ struct Shader * shaderInit(){
 }
 
 
-void checkCompileErrors( unsigned int shader, char * type ){
+void checkCompileErrors(unsigned int shader, char * type){
 	int success;
-        char infoLog[1024];
-        if (type != "PROGRAM"){
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if (!success){
-			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-			printf("SHADER_COMPILATION_ERROR of type: %s\n%s\n",
-			       type, infoLog );
-		}
+    char infoLog[1024];
+    if (type != "PROGRAM"){
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success){
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            printf("SHADER_COMPILATION_ERROR of type: %s\n%s\n",
+                   type, infoLog);
         }
-        else{
-		glGetProgramiv(shader, GL_LINK_STATUS, &success);
-		if (!success){
-			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-			printf("PROGRAM_LINKING_ERROR of type: %s\n%s\n",
-			       type, infoLog );
-		}
+    }
+    else{
+    glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if (!success){
+            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            printf("PROGRAM_LINKING_ERROR of type: %s\n%s\n",
+                   type, infoLog);
         }
+    }
 };
 
 
-void shader_introspection( struct Shader * shaders ){
+void shader_introspection(struct Shader * shaders){
 	// Stolen from Stack Overflow
 	unsigned int active_program = shaders->ID;
 
-	if (!glIsProgram( active_program )) {
+	if (!glIsProgram(active_program)) {
 	    printf("Active program is not valid.\n");
 	    exit(1);
 	}
 
 	GLint program_valid = 0;
-	glValidateProgram( active_program );
-	glGetProgramiv( active_program, GL_VALIDATE_STATUS, &program_valid );
+	glValidateProgram(active_program);
+	glGetProgramiv(active_program, GL_VALIDATE_STATUS, &program_valid);
 	if (GL_TRUE != program_valid) {
 	    printf("Program validation failed.\n");
 	    exit(1);
@@ -183,7 +186,7 @@ void shader_introspection( struct Shader * shaders ){
 	if (0 == current_program) {
 	    printf("Error, no current program is set.\n");
 	    exit(1);
-	} else if (current_program != active_program ) {
+	} else if (current_program != active_program) {
 	    printf("Error, current program doesn't match active_program!\n");
 	}
 
@@ -193,7 +196,8 @@ void shader_introspection( struct Shader * shaders ){
 	    printf("There are 0 uniforms active in program %d.\n", active_program);
 	    exit(1);
 	} else {
-	    printf("There are %d uniform(s) active in program %d.\n", num_active_uniforms, active_program);
+	    printf("There are %d uniform(s) active in program %d.\n",
+               num_active_uniforms, active_program);
 	}
 
 	GLint i;
@@ -208,7 +212,8 @@ void shader_introspection( struct Shader * shaders ){
 
 	for (i = 0; i < num_active_uniforms; i++)
 	{
-	    glGetActiveUniform( active_program, (GLuint)i, bufSize, &length, &size, &type, name);
+	    glGetActiveUniform(active_program, (GLuint)i, bufSize, &length,
+                           &size, &type, name);
 	    printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
 	}
 }

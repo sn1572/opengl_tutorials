@@ -2,7 +2,8 @@
 #include <stdio.h>
 
 
-void readFile(const char * fname, char ** buffer){
+void readFile(const char * fname, char ** buffer)
+{
 	// buffer does not need to be pre-allocated
 	FILE * fp;
 	long size;
@@ -95,22 +96,26 @@ void load(struct Shader * self, char * vertexPath, char * fragmentPath)
 }
 
 
-void use(struct Shader * self){
+void use(struct Shader * self)
+{
     glUseProgram((*self).ID); 
 }
 
 
-void setBool(struct Shader * self, const char * name, int value){
+void setBool(struct Shader * self, const char * name, int value)
+{
 	glUniform1i(glGetUniformLocation((*self).ID, name), (int)value); 
 }
 
 
-void setInt(struct Shader * self, const char * name, int value){
+void setInt(struct Shader * self, const char * name, int value)
+{
 	glUniform1i(glGetUniformLocation((*self).ID, name), value); 
 }
 
 
-void setFloat(struct Shader * self, const char * name, float value){
+void setFloat(struct Shader * self, const char * name, float value)
+{
 	glUniform1f(glGetUniformLocation((*self).ID, name), value); 
 }
 
@@ -142,7 +147,8 @@ struct Shader * shaderInit()
 }
 
 
-void checkCompileErrors(unsigned int shader, char * type){
+void checkCompileErrors(unsigned int shader, char * type)
+{
 	int success;
     char infoLog[1024];
     if (type != "PROGRAM"){
@@ -164,7 +170,8 @@ void checkCompileErrors(unsigned int shader, char * type){
 };
 
 
-void shader_introspection(struct Shader * shaders){
+void shader_introspection(struct Shader * shaders)
+{
 	// Stolen from Stack Overflow
 	unsigned int active_program = shaders->ID;
 

@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../../linmath/linmath.h"
+#include <linmath.h>
 
 
-int test1( vec3 * dst ){
+int test1(vec3 * dst)
+{
 	// Going to see what happens
 	// when we allocate a vec3 on the stack
 	// and then memcpy to src.
@@ -14,7 +15,8 @@ int test1( vec3 * dst ){
 }
 
 
-int main(){
+int main()
+{
 	vec3 dst2;
 	test1( &dst2 );
 	printf( "dst2 after copy: %1.1f,%1.1f,%1.1f\n",

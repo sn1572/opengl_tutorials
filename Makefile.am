@@ -9,7 +9,7 @@ solibs = libshader.so libcamera.so
 
 .PHONY: clean clean-local
 
-all: $(solibs)
+all-am: $(solibs)
 
 $(solibs): lib%.so: %.c
 	gcc -g -c -fpic -o $<.o $<

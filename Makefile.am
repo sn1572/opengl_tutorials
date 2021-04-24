@@ -5,18 +5,26 @@ SUBDIRS = src
 GREEN = \033[0;32m
 NC = \033[0m
 
-.PHONY: clean
+solibs = libshader.so libcamera.so
 
-all-am: bin1 bin2 etc
+.PHONY: clean clean-local
 
-example: requirements
-	if [$(uname[ = x86_63 ]; then\
-		multiline compile; \
-	fi
-	gcc single-line.compile
+all: $(solibs)
 
-bin1: example
-	compile stuff
+$(solibs): lib%.so: %.c
+	gcc -g -c -fpic -o $<.o $<
+	gcc -shared -o $@ $<.o -Wl,-rpath,$(LD_LIBRARY_PATH) \
+		-lshader -lglfw -lGL -lglad -ldl -lm
 
 clean:
-	rm $(HERE)src/*.o
+	rm *.o
+
+clean-local:
+	for dir in autom4te.cache build dist bin; do \
+		test -d $$dir && rm -r $$dir; \
+	done; \
+	for file in config.status configure config.log aclocal.m4 \
+		install-sh missing compile samples \
+		Makefile.in INSTALL COPYING Makefile; do \
+		test -f $$file && rm $$file; \
+	done;

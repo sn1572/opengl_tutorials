@@ -6,8 +6,6 @@ libs = ../lib
 solibs = ../lib/libshader.so ../lib/libcamera.so
 glad_install_dir = /home/mark/Documents/C/glad
 
-#-Wl,-rpath,$(libs) 
-
 all: $(solibs)
 
 $(libs)/libglad.so: $(glad_install_dir)/src/glad.c

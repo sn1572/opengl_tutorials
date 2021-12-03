@@ -3,19 +3,21 @@ NC = \033[0m
 CC = gcc
 headers = ../headers
 libs = ../lib
-solibs = libshader.so libcamera.so
+solibs = ../lib/libshader.so ../lib/libcamera.so
 glad_install_dir = /home/mark/Documents/C/glad
+
+#-Wl,-rpath,$(libs) 
 
 all: $(solibs)
 
-$(libs)/glad.so: $(glad_install_dir)/src/glad.c
+$(libs)/libglad.so: $(glad_install_dir)/src/glad.c
 	$(CC) -g -c -fpic -I$(glad_install_dir)/include -o glad.o $<
 	$(CC) -shared -o $@ glad.o
 
-$(solibs): lib%.so: %.c $(libs)/glad.so
+$(solibs): ../lib/lib%.so: %.c $(libs)/libglad.so
 	$(CC) -g -c -fpic -I$(headers) \
 		-I$(glad_install_dir)/include -o $<.o $<
-	$(CC) -shared -o $@ $<.o -Wl,-rpath,$(libs) \
+	$(CC) -shared -o $@ $<.o \
 		-L$(libs) -lglfw -lGL -lglad -ldl -lm
 
 .PHONY: clean

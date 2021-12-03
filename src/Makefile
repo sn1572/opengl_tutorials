@@ -9,6 +9,7 @@ glad_install_dir = /home/mark/Documents/C/glad
 all: $(solibs)
 
 $(libs)/libglad.so: $(glad_install_dir)/src/glad.c
+	mkdir -p ../lib
 	$(CC) -g -c -fpic -I$(glad_install_dir)/include -o glad.o $<
 	$(CC) -shared -o $@ glad.o
 

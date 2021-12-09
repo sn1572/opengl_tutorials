@@ -1,4 +1,4 @@
-#include "headers/camera.h"
+#include <camera.h>
 
 
 static const size_t vecSize = 3*sizeof(float);

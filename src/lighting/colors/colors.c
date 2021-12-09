@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include "../../../linmath/linmath.h"
+#include "../../../headers/linmath.h"
 #include <camera.h>
 
 

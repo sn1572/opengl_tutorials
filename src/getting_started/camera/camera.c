@@ -4,7 +4,7 @@
 #include <shader.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include "../../../linmath/linmath.h"
+#include <linmath.h>
 
 
 char fragSource[] = "../../shaders/coordinates/frag";

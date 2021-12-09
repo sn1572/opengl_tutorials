@@ -1,7 +1,7 @@
 CC = gcc
 headers = ../../../headers
 libs = ../../../lib
-binaries = textures 2textures exercise1 exercise4
+binaries = 1shaders 2shaders 3shaders shadersEx1 shadersEx2 shadersEx3
 glad_install_dir = /opt/glad
 
 all: $(binaries)

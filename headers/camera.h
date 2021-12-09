@@ -7,7 +7,7 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#include <stdbool.h>
-	#include "../../linmath/linmath.h"
+	#include <linmath.h>
 	#include "shader.h"
 
 

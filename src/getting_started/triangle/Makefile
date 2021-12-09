@@ -1,13 +1,12 @@
 CC = gcc
 headers = ../../../headers
 libs = ../../../lib
-binaries = helloRectangle
-sources = helloRectangle.c
+binaries = helloTriangle helloTriangleEx1 helloTriangleEx2 helloTriangleEx3
 glad_install_dir = /opt/glad
 
 all: $(binaries)
 
-$(binaries): $(sources)
+$(binaries): %: %.c
 	$(CC) -g -c -I$(glad_install_dir)/include \
 		-I$(headers) -o $@.o $<
 	$(CC) -o $@ $@.o -Wl,-rpath,$(libs) -L$(libs) -lshader -lcamera \

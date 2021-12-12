@@ -27,5 +27,4 @@
 	struct Shader * shaderInit();
 	void checkCompileErrors( unsigned int shader, char * type );
 	void shader_introspection( struct Shader * shaders );
-
 #endif

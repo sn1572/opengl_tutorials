@@ -7,17 +7,19 @@ void readFile(const char * fname, char ** buffer)
 	// buffer does not need to be pre-allocated
 	FILE * fp;
 	long size;
-
 	fp = fopen (fname, "rb");
 	if(!fp){
 		perror("readFile");
 		exit(1);
 	}
-
 	fseek(fp , 0L , SEEK_END);
 	size = ftell(fp);
 	rewind(fp);
 
+    if (buffer && *buffer){
+        perror("Non-empty buffer in readFile. Freeing previous content.");
+        free(*buffer);
+    }
 	/* allocate memory for entire content */
 	*buffer = calloc(size+1, sizeof(char));
 	if(!(*buffer)){
@@ -29,40 +31,37 @@ void readFile(const char * fname, char ** buffer)
 	}
 
 	/* copy the file into the buffer */
-	if(1 != fread((*buffer), size, 1, fp)){
+	if(1 != fread(*buffer, size, 1, fp)){
 		fclose(fp);
-		free((*buffer));
+		free(*buffer);
 		fputs("File read failure", stderr);
 		exit(1);
 	}
-
 	// NUL terminate the buffer
 	(*buffer)[size] = '\0';
-
 	fclose(fp);
 }
 
 
 void load(struct Shader * self, char * vertexPath, char * fragmentPath)
 {
-	char * vShaderText = NULL;
-	readFile(vertexPath, &vShaderText);
-	if (vShaderText == NULL){
-		fputs("Vertex shader text read failure", stderr);
-		exit(1);
-	}
-	char * fShaderText = NULL;
-	readFile(fragmentPath, &fShaderText);
-	if (fShaderText == NULL){
-		fputs("Fragment shader text read failure", stderr);
-		exit(1);
-	}
-	const char ** vShaderCode = NULL;
-	vShaderCode = &vShaderText;
-	const char ** fShaderCode = NULL;
-	fShaderCode = &fShaderText;
-
+    char ** vertexSource = NULL;
+    char ** fragmentSource = NULL;
     unsigned int vertex, fragment;
+
+	readFile(vertexPath, vertexSource);
+	if (!(vertexSource)){
+		fputs("Vertex shader file read failure", stderr);
+		exit(1);
+	}
+	readFile(fragmentPath, fragmentSource);
+	if (!(fragmentSource)){
+		fputs("Fragment shader file read failure", stderr);
+		exit(1);
+	}
+    const char ** vShaderCode = vertexSource;
+    const char ** fShaderCode = fragmentSource;
+
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
 	if (glGetError() != GL_NO_ERROR){
@@ -91,8 +90,10 @@ void load(struct Shader * self, char * vertexPath, char * fragmentPath)
      */
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-	free(vShaderText);
-	free(fShaderText);
+    if (vertexSource)
+	    free(vertexSource);
+    if (fragmentSource)
+	    free(fragmentSource);
 }
 
 

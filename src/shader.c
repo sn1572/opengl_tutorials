@@ -59,8 +59,8 @@ void load(struct Shader * self, char * vertexPath, char * fragmentPath)
 		fputs("Fragment shader file read failure", stderr);
 		exit(1);
 	}
-    const char ** vShaderCode = vertexSource;
-    const char ** fShaderCode = fragmentSource;
+    const char ** vShaderCode = (const char **)vertexSource;
+    const char ** fShaderCode = (const char **)fragmentSource;
 
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 
 void omg_constants()
@@ -11,7 +12,15 @@ void omg_constants()
 }
 
 
+void const_after_change()
+{
+    int x = 1;
+    x = 2;
+    const int * y = &x;
+}
+
+
 int main()
 {
-    omg_constants();
+    const_after_change();
 }

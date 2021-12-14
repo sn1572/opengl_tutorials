@@ -37,10 +37,11 @@
 		}
 	}
 
-	static void cameraErrorInterpreter(cameraError_t err, const char * file, int line){
+	static void cameraErrorInterpreter(cameraError_t err, const char * file,
+                                       int line){
 		if (err != CAM_NO_ERR){
 			fprintf(stderr, "%s error at line %d of file %s\n", 
-				 cameraGetErrorString(err), line, file);
+				    cameraGetErrorString(err), line, file);
 			exit(1);
 		}
 	}

@@ -14,7 +14,7 @@ $(libs)/libglad.so: $(glad_install_dir)/src/glad.c
 	$(CC) -shared -o $@ glad.o
 
 $(solibs): ../lib/lib%.so: %.c ../headers/%.h $(libs)/libglad.so
-	$(CC) -g -c -fpic -I$(headers) \
+	$(CC) -g -c -fpic -I$(headers) -DSHADER_DEBUG\
 		-I$(glad_install_dir)/include -o $<.o $<
 	$(CC) -shared -o $@ $<.o \
 		-L$(libs) -lglfw -lGL -lglad -ldl -lm

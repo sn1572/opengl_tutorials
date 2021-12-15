@@ -2,16 +2,28 @@
 #include <stdio.h>
 
 
-void readFile(const char * fname, char ** buffer)
+#ifdef SHADER_DEBUG
+#define gl_err_check(goto_loc) do {\
+    if (glGetError() != GL_NO_ERROR){\
+        err_print("shader creation failed\n");\
+        result = SHADER_GL_ERR;\
+        goto goto_loc;\
+    }} while(0)
+#else
+#define gl_err_Check(goto_loc){}
+#endif
+
+
+shader_err_t readFile(const char * fname, char ** buffer)
 {
     // buffer does not need to be pre-allocated
     FILE * fp;
     long size;
 
-    fp = fopen (fname, "rb");
+    fp = fopen(fname, "rb");
     if(!fp){
-        perror("readFile");
-        exit(1);
+        err_print("Failure opening file\n");
+        return SHADER_FS_ERR;
     }
     fseek(fp , 0L , SEEK_END);
     size = ftell(fp);
@@ -22,19 +34,20 @@ void readFile(const char * fname, char ** buffer)
     if(!buffer){
         fclose(fp);
         err_print("Failed to allocate memory\n");
-        exit(1);
+        return SHADER_NO_MEM;
     }
 
     /* copy the file into the buffer */
     if(1 != fread(*buffer, size, 1, fp)){
         fclose(fp);
         free(*buffer);
-        fputs("File read failure", stderr);
-        exit(1);
+        err_print("File read failure\n");
+        return SHADER_FS_ERR;
     }
     // NUL terminate the buffer
     (*buffer)[size] = '\0';
     fclose(fp);
+    return SHADER_NO_ERR;
 }
 
 
@@ -45,12 +58,17 @@ shader_err_t load(struct Shader * self, char * vertexPath, char * fragmentPath)
     unsigned int vertex, fragment;
     shader_err_t result = SHADER_NO_ERR;
 
-    readFile(vertexPath, &vertexSource);
+    result = readFile(vertexPath, &vertexSource);
+    if (result != SHADER_NO_ERR)
+        return result;
     if (!(vertexSource)){
         err_print("Vertex shader file read failure\n");
         return SHADER_NULL_PTR;
     }
-    readFile(fragmentPath, &fragmentSource);
+    result = readFile(fragmentPath, &fragmentSource);
+    if (result != SHADER_NO_ERR){
+        goto free_1;
+    }
     if (!(fragmentSource)){
         err_print("Fragment shader file read failure\n");
         result = SHADER_NULL_PTR;
@@ -59,62 +77,42 @@ shader_err_t load(struct Shader * self, char * vertexPath, char * fragmentPath)
 
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    if (glGetError() != GL_NO_ERROR){
-        err_print("shader creation failed\n");
-        result = SHADER_GL_ERR;
-        goto free_2;
-    }
+    gl_err_check(free_2);
     glShaderSource(vertex, 1, (const char **)(&vertexSource), NULL);
-    if (glGetError() != GL_NO_ERROR){
-        err_print("shader source assignment failed\n");
-        result = SHADER_GL_ERR;
-        goto shader_1;
-    }
+    gl_err_check(shader_1);
     glCompileShader(vertex);
-    if (checkCompileErrors(vertex, "VERTEX") != SHADER_NO_ERR){
-        err_print("Vertex shader compile failures.\n");
-        result = SHADER_GL_ERR;
-        goto shader_1;
-    }
+    gl_err_check(shader_1);
     checkCompileErrors(vertex, "VERTEX");
 
     // fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    if (glGetError() != GL_NO_ERROR){
-        err_print("Shader creation failed\n");
-        result = SHADER_GL_ERR;
-        goto shader_1;
-    }
+    gl_err_check(shader_1);
     glShaderSource(fragment, 1, (const char **)(&fragmentSource), NULL);
-    if (glGetError() != GL_NO_ERROR){
-        err_print("shader source assignment failed\n");
-        result = SHADER_GL_ERR;
-        goto shader_2;
-    }
+    gl_err_check(shader_2);
     glCompileShader(fragment);
-    if (checkCompileErrors(vertex, "VERTEX") != SHADER_NO_ERR){
-        err_print("Vertex shader compile failures.\n");
-        result = SHADER_GL_ERR;
-        goto shader_2;
-    }
+    gl_err_check(shader_2);
     checkCompileErrors(fragment, "FRAGMENT");
 
     /* shader Program */
     GLint ID = glCreateProgram();
+    #ifdef SHADER_DEBUG
     if (glGetError() != GL_NO_ERROR){
         err_print("Failed to create shader program\n");
         result = SHADER_GL_ERR;
         goto shader_2;
     }
+    #endif
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
+    #ifdef SHADER_DEBUG
     if (checkCompileErrors(ID, "PROGRAM") != SHADER_NO_ERR){
         err_print("Shader compilation failed\n");
         result = SHADER_GL_ERR;
         glDeleteProgram(ID);
         goto shader_2;
     }
+    #endif
     /* The penultimate assignment. If we got here, we succeeded. */
     self->ID = ID;
 

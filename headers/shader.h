@@ -22,22 +22,25 @@
         struct Shader * self;
         shader_err_t (*load)(struct Shader * self, char * vertexPath,
                              char * fragmentPath);
-        void (*use)(struct Shader * self);
-        void (*setBool)(struct Shader * self, const char * name, int value);
-        void (*setInt)(struct Shader * self, const char * name, int value);
-        void (*setFloat)(struct Shader * self, const char * name, float value);
-        void (*setVec3)(struct Shader * self, const char * name, 
-                        float x, float y, float z);
+        shader_err_t (*use)(struct Shader * self);
+        shader_err_t (*setBool)(struct Shader * self, const char * name,
+                                int value);
+        shader_err_t (*setInt)(struct Shader * self, const char * name,
+                               int value);
+        shader_err_t (*setFloat)(struct Shader * self, const char * name,
+                                 float value);
+        shader_err_t (*setVec3)(struct Shader * self, const char * name, 
+                                float x, float y, float z);
     };
 
     shader_err_t readFile(const char * fname, char ** buffer);
     shader_err_t load(struct Shader * self, char * vertexPath,
                       char * fragmentPath);
-    void use(struct Shader * self);
-    void setBool(struct Shader * self, const char * name, int value);
-    void setInt(struct Shader * self, const char * name, int value);
-    void setFloat(struct Shader * self, const char * name, float value);
-    void setVec3(struct Shader * self, const char * name, float x, float y,
+    shader_err_t use(struct Shader * self);
+    shader_err_t setBool(struct Shader * self, const char * name, int value);
+    shader_err_t setInt(struct Shader * self, const char * name, int value);
+    shader_err_t setFloat(struct Shader * self, const char * name, float value);
+    shader_err_t setVec3(struct Shader * self, const char * name, float x, float y,
                  float z);
     struct Shader * shaderInit();
     shader_err_t checkCompileErrors(unsigned int shader, char * type);

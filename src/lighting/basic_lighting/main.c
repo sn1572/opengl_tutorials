@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <shader.h>
 #include <stdbool.h>
+#include <math.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include "../../../headers/linmath.h"
@@ -11,62 +12,47 @@
 #include "models/light_vertices.h"
 
 
-static const char cube_frag_source[] = "shaders/cube_frag";
-static const char cube_vert_source[] = "shaders/cube_vert";
-static const char light_frag_source[] = "shaders/light_frag";
-static const char light_vert_source[] = "shaders/light_vert";
+static char cube_frag_source[] = "shaders/cube_frag";
+static char cube_vert_source[] = "shaders/cube_vert";
+static char light_frag_source[] = "shaders/light_frag";
+static char light_vert_source[] = "shaders/light_vert";
 static int WIDTH = 1920;
 static int HEIGHT = 1080;
+
+
+float * join(float * a, int rows_a, int cols_a, float * b, int rows_b,
+             int cols_b)
+{
+    /* concatenates b to a column-wise.
+     */
+    float * out = NULL;
+    int i, j;
+    out = calloc(rows_a*(cols_a+cols_b), sizeof(float));
+    if (!out){
+        fprintf(stderr, "%s %d: out of mem\n", __FILE__, __LINE__);
+        return NULL;
+    }
+    if (rows_a != rows_b){
+        fprintf(stderr, "%s %d: Arrays must have same number of rows\n",
+                __FILE__, __LINE__);
+        free(out);
+        return NULL;
+    }
+    for (i=0; i<rows_a; i++){
+        for (j=0; j<cols_a; j++){
+            out[i*(cols_a+cols_b)+j] = a[i*cols_a+j];
+        }
+        for (j=0; j<cols_b; j++){
+            out[i*(cols_a+cols_b)+j+cols_a] = b[i*cols_b+j];
+        }
+    }
+    return(out);
+}
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
 }
-
-
-const float cube_vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-    0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-    0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-    0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
 
 
 float cubePositions[] = {
@@ -87,20 +73,31 @@ const vec3 light_position = {5,5,0};
 
 
 int main(){
+    float * cube_vertices = NULL;
+    cube_vertices = join(vertices, 6*6, 6, texture_coordinates,
+                         6*6, 2);
+    if (!cube_vertices){
+        printf("Join failed\n");
+    }
+    /* cube_vertices: 6*6 rows. Columns are v_x, v_y, v_z,
+     * n_x, n_y, n_z, t_x, t_y.
+     * v_* are vertex coordinates, n_* are normals, t_*
+     * are texture coordinates.
+     */
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    //glfw window creation and initialization
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpengl", NULL, NULL);
-
+    //glfw window creation and context initialization
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpengl", NULL,
+                                          NULL);
     if (window == NULL){
         printf("Failed to create a GLFW window");
         glfwTerminate();
         exit(1);
     }
-
     glfwMakeContextCurrent(window);
 
     //initialize GLAD loader
@@ -141,7 +138,7 @@ int main(){
     glGenBuffers(1, &light_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, light_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(light_vertices), 
-             light_vertices, GL_STATIC_DRAW);
+                 light_vertices, GL_STATIC_DRAW);
 
     // Specification of layout for light's VAO
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
@@ -158,22 +155,28 @@ int main(){
     glGenBuffers(1, &cube_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, cube_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), 
-             cube_vertices, GL_STATIC_DRAW);
+                 cube_vertices, GL_STATIC_DRAW);
 
     // bind VBO to VAO
-    // vertex coordinate layout
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-                  5*sizeof(float), (void*)0);
+    /* Arguments are: index in VAO, number of elements, element dtype,
+     * something that's always False (lol), stride, offset
+     */
+    // Vertices
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // texture coordinates
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-                  5*sizeof(float), (void*)(3*sizeof(float)));
+    // Surface normals
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float),
+                          (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(1);
+    // Texture coordinates
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float),
+                          (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
     
     //Texture time
-    unsigned int texture1;
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -181,10 +184,8 @@ int main(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int width, height, nrChannels;
-
     unsigned char *data = stbi_load("container.jpg", &width, &height,
                                     &nrChannels, 0);
-
     if (data){
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
                      GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -205,13 +206,12 @@ int main(){
     cube_shaders->load(cube_shaders, cube_vert_source, cube_frag_source);
     cube_shaders->use(cube_shaders);
     cube_shaders->setVec3(cube_shaders, "light_color", 0.0f, 1.0f, 1.0f);
-    glUniform1i(glGetUniformLocation(cube_shaders->ID, "texture1"), 0);
+    glUniform1i(glGetUniformLocation(cube_shaders->ID, "texture"), 0);
 
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR){
-        fprintf(stderr, "Error on line %d in file %s\n",
-                __LINE__, __FILE__);
-        fprintf(stderr, "GL error %x\n", glError); 
+        fprintf(stderr, "%s %d: GL Error %x\n", __LINE__, __FILE__, glError);
+        glfwTerminate();
         exit(1);
     }
 
@@ -221,7 +221,7 @@ int main(){
 
     glBindVertexArray(cube_VAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    glBindTexture(GL_TEXTURE_2D, texture);
     glEnable(GL_DEPTH_TEST);
 
     int numFrames = 0;
@@ -248,6 +248,9 @@ int main(){
 
         // draw cubes
         cube_shaders->use(cube_shaders);
+        cube_shaders->setVec3(cube_shaders, "light_position",
+                              light_position[0], light_position[1],
+                              light_position[2]);
         cam->setViewMatrix(cam, cube_shaders, "view");
         cam->setProjectionMatrix(cam, cube_shaders, "projection");
         glBindVertexArray(cube_VAO);

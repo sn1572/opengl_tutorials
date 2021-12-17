@@ -1,12 +1,15 @@
 #version 330 core
-out vec4 frag_color;
 in vec2 texture_coordinates;
-uniform sampler2D texture1;
+out vec4 frag_color;
+
+uniform sampler2D texture;
 uniform vec3 light_color;
+uniform vec3 light_position;
+
 vec4 ambient;
 const float ambient_strength = 0.1;
 
 void main(){
     ambient = vec4(ambient_strength * light_color, 1.0);
-	frag_color = texture(texture1, texture_coordinates) * ambient;
+	frag_color = texture(texture, texture_coordinates) * ambient;
 }

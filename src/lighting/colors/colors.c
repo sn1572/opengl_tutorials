@@ -263,7 +263,11 @@ int main(){
 
     // Some introspection stolen from stack overflow
     light_shaders->use(light_shaders);
+    printf("Light shader introspection:\n");
     shader_introspection(light_shaders);
+    cube_shaders->use(cube_shaders);
+    printf("Cube shader introsecption:\n");
+    shader_introspection(cube_shaders);
 
     // End S-O introspection code
     glBindVertexArray(cube_VAO);

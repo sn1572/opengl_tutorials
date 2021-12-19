@@ -1,15 +1,26 @@
-#version 330 core
-in vec2 texture_coordinates;
+#version 400 core
+in vec3 fragment_position;
+in vec3 normal;
+in vec2 texture_coordinates; 
+
 out vec4 frag_color;
 
-uniform sampler2D texture;
+uniform sampler2D cube_texture;
 uniform vec3 light_color;
 uniform vec3 light_position;
 
-vec4 ambient;
-const float ambient_strength = 0.1;
+const float ambient_strength = 0.2;
+vec3 light_direction;
+float diffuse_dot;
+vec3 diffuse;
+vec3 ambient;
+vec4 total;
 
 void main(){
-    ambient = vec4(ambient_strength * light_color, 1.0);
-	frag_color = texture(texture, texture_coordinates) * ambient;
+    light_direction = normalize(light_position - fragment_position);
+    diffuse_dot = max(dot(normalize(normal), light_direction), 0.0);
+    diffuse = diffuse_dot * light_color;
+    ambient = ambient_strength * light_color;
+    total = vec4(diffuse + ambient, 1.0);
+	frag_color = texture(cube_texture, texture_coordinates) * total;
 }

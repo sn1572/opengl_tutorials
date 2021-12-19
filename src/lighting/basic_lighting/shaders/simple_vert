@@ -1,10 +1,7 @@
 #version 400 core
 layout (location=0) in vec3 in_position;
-layout (location=1) in vec3 in_normal;
 layout (location=2) in vec2 in_texture_coordinates;
 
-out vec3 fragment_position;
-out vec3 normal;
 out vec2 texture_coordinates; 
 
 uniform mat4 projection;
@@ -14,8 +11,4 @@ uniform mat4 model;
 void main(){
 	gl_Position = projection * view * model * vec4(in_position, 1.0);
 	texture_coordinates = in_texture_coordinates;
-    // The normals need to transform
-    normal = vec3(model * vec4(in_normal, 1.0));
-    // Apparently frag position is interpolated from triangle vertices
-    fragment_position = vec3(model * vec4(in_position, 1.0));
 }

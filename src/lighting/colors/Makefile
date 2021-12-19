@@ -1,7 +1,7 @@
 CC = gcc
 headers = ../../../headers
 lib_dir = ../../../lib
-libs = ../../../lib/shader ../../../lib/camera
+libs = ../../../lib/libshader.so ../../../lib/libcamera.so
 lib_srcs = ../../shader.c ../../camera.c
 binaries = colors
 glad_install_dir = /opt/glad

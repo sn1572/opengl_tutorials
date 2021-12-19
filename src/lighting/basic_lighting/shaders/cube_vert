@@ -10,12 +10,12 @@ out vec2 texture_coordinates;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 normal_matrix;
 
 void main(){
 	gl_Position = projection * view * model * vec4(in_position, 1.0);
 	texture_coordinates = in_texture_coordinates;
-    // The normals need to transform
-    normal = vec3(model * vec4(in_normal, 1.0));
+    normal = vec3(normal_matrix * vec4(in_normal, 0.0));
     // Apparently frag position is interpolated from triangle vertices
     fragment_position = vec3(model * vec4(in_position, 1.0));
 }

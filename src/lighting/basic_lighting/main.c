@@ -7,6 +7,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include "../../../headers/linmath.h"
+#include "../../../headers/linmath_extension.h"
 #include <camera.h>
 #include "models/combined_cube_vertices.h"
 #include "models/light_vertices.h"
@@ -210,7 +211,7 @@ int main(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int width, height, nrChannels;
-    unsigned char * data = stbi_load("container.jpg", &width, &height,
+    unsigned char * data = stbi_load("models/container.jpg", &width, &height,
                                      &nrChannels, 0);
     if (data){
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
@@ -240,6 +241,7 @@ int main(){
     }
     cube_shaders->use(cube_shaders);
     cube_shaders->setVec3(cube_shaders, "light_color", 0.0f, 1.0f, 1.0f);
+    cube_shaders->setVec3(cube_shaders, "ambient_color", 1.f, 1.f, 1.f);
     cube_shaders->setInt(cube_shaders, "cube_texture", 0);
     //glUniform1i(glGetUniformLocation(cube_shaders->ID, "cube_texture"), 0);
 
@@ -266,6 +268,10 @@ int main(){
     int numFrames = 0;
     float past = (float)glfwGetTime();
     mat4x4 model;
+    /* This is the one that transforms the normals correctly,
+     * even if there is a scaling present in the model matrix.
+     */
+    mat4x4 normal_matrix;
 
     while (!glfwWindowShouldClose(window)){
         numFrames += 1;
@@ -291,6 +297,9 @@ int main(){
         cube_shaders->setVec3(cube_shaders, "light_position",
                               light_position[0], light_position[1],
                               light_position[2]);
+        cube_shaders->setVec3(cube_shaders, "camera_position",
+                              (*cam->position)[0], (*cam->position)[1],
+                              (*cam->position)[2]);
         cam->setViewMatrix(cam, cube_shaders, "view");
         cam->setProjectionMatrix(cam, cube_shaders, "projection");
         
@@ -309,6 +318,8 @@ int main(){
                 mat4x4_rotate(model, model, 0.5, 1, 0, 0);
             }
             sendMatrixToShader(model, "model", cube_shaders);
+            mat4x4_normal_matrix(normal_matrix, model);
+            sendMatrixToShader(normal_matrix, "normal_matrix", cube_shaders);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         glfwSwapBuffers(window);

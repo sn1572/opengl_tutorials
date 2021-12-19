@@ -3,24 +3,43 @@ in vec3 fragment_position;
 in vec3 normal;
 in vec2 texture_coordinates; 
 
+
 out vec4 frag_color;
+
 
 uniform sampler2D cube_texture;
 uniform vec3 light_color;
 uniform vec3 light_position;
+uniform vec3 ambient_color;
+uniform vec3 camera_position;
+
 
 const float ambient_strength = 0.2;
+const float specular_strength = 0.5;
+const float shininess = 128;
 vec3 light_direction;
+vec3 view_direction;
+vec3 reflect_direction;
 float diffuse_dot;
+float specular_dot;
 vec3 diffuse;
 vec3 ambient;
+vec3 specular;
+vec3 normalized_normal;
 vec4 total;
 
+
 void main(){
+    normalized_normal = normalize(normal);
     light_direction = normalize(light_position - fragment_position);
-    diffuse_dot = max(dot(normalize(normal), light_direction), 0.0);
+    view_direction = normalize(camera_position - fragment_position);
+    reflect_direction = reflect(-light_direction, normalized_normal);
+    specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
+                       shininess);
+    specular = specular_strength * specular_dot * light_color;
+    diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
     diffuse = diffuse_dot * light_color;
-    ambient = ambient_strength * light_color;
-    total = vec4(diffuse + ambient, 1.0);
+    ambient = ambient_strength * ambient_color;
+    total = vec4(diffuse + ambient + specular, 1.0);
 	frag_color = texture(cube_texture, texture_coordinates) * total;
 }

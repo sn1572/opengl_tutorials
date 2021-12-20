@@ -1,0 +1,12 @@
+#version 400 core
+out vec4 frag_color;
+
+in vec2 texture_coordinates;
+
+uniform sampler2D cube_texture;
+uniform vec3 light_color;
+
+void main(){
+	frag_color = texture(cube_texture, texture_coordinates) * \
+                    vec4(light_color, 1.0);
+}

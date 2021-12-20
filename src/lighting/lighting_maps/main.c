@@ -28,42 +28,45 @@ static int WIDTH = 1920;
 static int HEIGHT = 1080;
 
 
-float * join(float * a, int rows_a, int cols_a, float * b, int rows_b,
-             int cols_b)
-{
-    /* concatenates b to a column-wise.
-     */
-    float * out = NULL;
-    int i, j;
-    out = calloc(rows_a*(cols_a+cols_b), sizeof(float));
-    if (!out){
-        fprintf(stderr, "%s %d: out of mem\n", __FILE__, __LINE__);
-        return NULL;
-    }
-    if (rows_a != rows_b){
-        fprintf(stderr, "%s %d: Arrays must have same number of rows\n",
-                __FILE__, __LINE__);
-        free(out);
-        return NULL;
-    }
-    for (i=0; i<rows_a; i++){
-        for (j=0; j<cols_a; j++){
-            out[i*(cols_a+cols_b)+j] = a[i*cols_a+j];
-        }
-        for (j=0; j<cols_b; j++){
-            out[i*(cols_a+cols_b)+j+cols_a] = b[i*cols_b+j];
-        }
-    }
-    return(out);
-}
-
-
 void print_array(float * array, int rows, int cols){
     for (int i=0; i<rows; i++){
         for (int j=0; j<cols; j++){
             printf("%4.2f ", array[i*cols+j]);
         }
         printf("\n");
+    }
+}
+
+
+int image_load(const char * file_name){
+    int width, height, nrChannels;
+    unsigned char * data = stbi_load(file_name, &width, &height,
+                                     &nrChannels, 0);
+    if (data){
+        GLenum format;
+        switch(nrChannels){
+            case 3:
+                format = GL_RGB;
+                break;
+            case 4:
+                format = GL_RGBA;
+                break;
+            default:
+                fprintf(stderr, "%s %d: Unrecognized number of channels: %i\n",
+                        __FILE__, __LINE__, nrChannels);
+                stbi_image_free(data);
+                return 1;
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(data);
+        return 0;
+    }
+    else{
+        fprintf(stderr, "%f %d: Failed to load texture\n", __FILE__,
+                __LINE__);
+        return 1;
     }
 }
 
@@ -201,32 +204,10 @@ int main(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    int width, height, nrChannels;
-    unsigned char * data = stbi_load("models/container2.png", &width, &height,
-                                     &nrChannels, 0);
-    if (data){
-        GLenum format;
-        switch(nrChannels){
-            case 3:
-                format = GL_RGB;
-                break;
-            case 4:
-                format = GL_RGBA;
-                break;
-            default:
-                fprintf(stderr, "%s %d: Unrecognized number of channels: %i\n",
-                        __FILE__, __LINE__, nrChannels);
-                goto cleanup_gl;
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                     format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else{
-        printf("Failed to load texture\n");
+    if (image_load("models/container2.png")){
+        status = FAILURE;
         goto cleanup_gl;
     }
-    stbi_image_free(data);
 
     struct Shader * light_shaders = shaderInit();
     if (light_shaders->load(light_shaders, light_vert_source,

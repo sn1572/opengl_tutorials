@@ -1,5 +1,4 @@
 #include <shader.h>
-#include <stdio.h>
 
 
 #ifdef SHADER_DEBUG
@@ -176,11 +175,10 @@ shader_err_t setFloat(struct Shader * self, const char * name, float value)
 }
 
 
-shader_err_t setVec3(struct Shader * self, const char * name, float x, float y,
-    float z)
+shader_err_t setVec3(struct Shader * self, const char * name, vec3 vec)
 {
     shader_err_t result = SHADER_NO_ERR;
-    glUniform3f(glGetUniformLocation((*self).ID, name), x, y, z); 
+    glUniform3f(glGetUniformLocation((*self).ID, name), vec[0], vec[1], vec[2]);
     gl_err_check_no_goto();
     return result;
 }

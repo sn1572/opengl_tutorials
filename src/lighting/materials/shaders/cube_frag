@@ -1,0 +1,55 @@
+#version 400 core
+in vec3 fragment_position;
+in vec3 normal;
+in vec2 texture_coordinates; 
+
+
+out vec4 frag_color;
+
+
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+uniform Material material;
+uniform Light light;
+uniform sampler2D cube_texture;
+uniform vec3 light_color;
+uniform vec3 ambient_color;
+uniform vec3 camera_position;
+
+
+vec3 light_direction;
+vec3 view_direction;
+vec3 reflect_direction;
+float diffuse_dot;
+float specular_dot;
+vec3 normalized_normal;
+vec3 ambient;
+vec3 diffuse;
+vec3 specular;
+vec4 total;
+
+
+void main(){
+    normalized_normal = normalize(normal);
+    light_direction = normalize(light.position - fragment_position);
+    view_direction = normalize(camera_position - fragment_position);
+    reflect_direction = reflect(-light_direction, normalized_normal);
+    specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
+                       material.shininess);
+    specular = material.specular * specular_dot * light.specular;
+    diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
+    diffuse = diffuse_dot * light.diffuse * material.diffuse;
+    ambient = light.ambient * material.ambient;
+    total = vec4(diffuse + ambient + specular, 1.0);
+	frag_color = texture(cube_texture, texture_coordinates) * total;
+}

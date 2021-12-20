@@ -4,6 +4,7 @@
     #include <glad/glad.h>
     #include <stdio.h>
     #include <stdlib.h>
+    #include "linmath.h"
 
     typedef enum {
         SHADER_NO_ERR,
@@ -30,7 +31,7 @@
         shader_err_t (*setFloat)(struct Shader * self, const char * name,
                                  float value);
         shader_err_t (*setVec3)(struct Shader * self, const char * name, 
-                                float x, float y, float z);
+                                vec3 vec);
     };
 
     shader_err_t readFile(const char * fname, char ** buffer);
@@ -40,8 +41,7 @@
     shader_err_t setBool(struct Shader * self, const char * name, int value);
     shader_err_t setInt(struct Shader * self, const char * name, int value);
     shader_err_t setFloat(struct Shader * self, const char * name, float value);
-    shader_err_t setVec3(struct Shader * self, const char * name, float x, float y,
-                 float z);
+    shader_err_t setVec3(struct Shader * self, const char * name, vec3 vec);
     struct Shader * shaderInit();
     shader_err_t checkCompileErrors(unsigned int shader, char * type);
     void shader_introspection(struct Shader * shaders);

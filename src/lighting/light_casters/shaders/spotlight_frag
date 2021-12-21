@@ -45,7 +45,7 @@ vec4 total;
 void main(){
     normalized_normal = normalize(normal);
     light_direction = normalize(light.position - fragment_position);
-    theta = acos(dot(-light_direction, normalize(light.direction)));
+    theta = dot(light_direction, normalize(-light.direction));
     if (theta > light.theta_min){
         theta = theta-light.theta_min;
         intensity = min(theta / (light.theta_taper_start - light.theta_min),

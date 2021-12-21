@@ -11,6 +11,7 @@ out vec4 frag_color;
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
+    sampler2D emission;
     float shininess;
 };
 struct Light {
@@ -35,6 +36,8 @@ vec3 normalized_normal;
 vec3 ambient;
 vec3 diffuse;
 vec3 specular;
+vec3 specular_vec;
+vec4 emission;
 vec4 total;
 
 
@@ -45,13 +48,18 @@ void main(){
     reflect_direction = reflect(-light_direction, normalized_normal);
     specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
                        material.shininess);
-    specular = vec3(texture(material.specular, texture_coordinates)) * \
-                 specular_dot * light.specular;
+    specular_vec = vec3(texture(material.specular, texture_coordinates));
+    specular = specular_vec * specular_dot * light.specular;
     diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
     diffuse = diffuse_dot * light.diffuse * \
                 vec3(texture(material.diffuse, texture_coordinates));
     ambient = light.ambient * vec3(texture(material.diffuse,
                                            texture_coordinates));
     total = vec4(diffuse + ambient + specular, 1.0);
-	frag_color = texture(material.diffuse, texture_coordinates) * total;
+    emission = texture(material.emission, texture_coordinates);
+    if ((length(vec3(emission)) < 0.01) || (length(specular_vec) > 0.01)){
+	    frag_color = texture(material.diffuse, texture_coordinates) * total;
+    } else{
+        frag_color = emission;
+    }
 }

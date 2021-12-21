@@ -3,7 +3,7 @@ headers = ../../../headers
 lib_dir = ../../../lib
 libs = ../../../lib/shader ../../../lib/camera
 lib_srcs = ../../shader.c ../../camera.c
-binaries = main
+binaries = main ex4
 glad_install_dir = /opt/glad
 
 all: $(binaries)

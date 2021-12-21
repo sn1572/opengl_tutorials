@@ -1,0 +1,56 @@
+#version 400 core
+in vec3 fragment_position;
+in vec3 normal;
+in vec2 texture_coordinates; 
+
+
+out vec4 frag_color;
+
+
+// WARN: sampler2D can only ever be a uniform!
+struct Material {
+    sampler2D diffuse;
+    sampler2D specular;
+    float shininess;
+};
+struct Light {
+    vec3 direction;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+uniform Material material;
+uniform Light light;
+uniform vec3 ambient_color;
+uniform vec3 camera_position;
+
+
+vec3 light_direction;
+vec3 view_direction;
+vec3 reflect_direction;
+float diffuse_dot;
+float specular_dot;
+vec3 normalized_normal;
+vec3 ambient;
+vec3 diffuse;
+vec3 specular;
+vec4 total;
+
+
+void main(){
+    normalized_normal = normalize(normal);
+    light_direction = normalize(-light.direction);
+    view_direction = normalize(camera_position - fragment_position);
+    reflect_direction = reflect(-light_direction, normalized_normal);
+    specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
+                       material.shininess);
+    specular = vec3(texture(material.specular, texture_coordinates)) * \
+                 specular_dot * light.specular;
+    diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
+    diffuse = diffuse_dot * light.diffuse * \
+                vec3(texture(material.diffuse, texture_coordinates));
+    ambient = light.ambient * vec3(texture(material.diffuse,
+                                           texture_coordinates));
+    total = vec4(diffuse + ambient + specular, 1.0);
+	frag_color = texture(material.diffuse, texture_coordinates) * total;
+}

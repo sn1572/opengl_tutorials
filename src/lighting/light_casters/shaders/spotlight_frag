@@ -19,6 +19,7 @@ struct Light {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+    float theta_taper_start;
     float theta_min;
 };
 uniform Material material;
@@ -46,7 +47,9 @@ void main(){
     light_direction = normalize(light.position - fragment_position);
     theta = acos(dot(-light_direction, normalize(light.direction)));
     if (theta > light.theta_min){
-        intensity = 1.0;
+        theta = theta-light.theta_min;
+        intensity = min(theta / (light.theta_taper_start - light.theta_min),
+                        1.0);
     } else{
         intensity = 0.0;
     }

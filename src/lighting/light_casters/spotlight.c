@@ -259,6 +259,7 @@ int main(){
     setVec3(cube_shaders, "light.diffuse", light_diffuse);
     setVec3(cube_shaders, "light.specular", light_specular);
     setVec3(cube_shaders, "light.direction", light_direction);
+    setFloat(cube_shaders, "light.theta_taper_start", 0.6f);
     setFloat(cube_shaders, "light.theta_min", 0.5f);
 
     light_shaders->use(light_shaders);

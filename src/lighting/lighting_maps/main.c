@@ -38,7 +38,7 @@ void print_array(float * array, int rows, int cols){
 }
 
 
-int image_load(const char * file_name){
+int image_to_texture(const char * file_name){
     int width, height, nrChannels;
     unsigned char * data = stbi_load(file_name, &width, &height,
                                      &nrChannels, 0);
@@ -194,17 +194,28 @@ int main(){
         goto cleanup_gl;
     }
     
-    //Texture time
+    //Cube texture (aka diffuse map)
     unsigned int diffuse_map;
     glGenTextures(1, &diffuse_map);
     glBindTexture(GL_TEXTURE_2D, diffuse_map);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (image_to_texture("models/container2.png")){
+        status = FAILURE;
+        goto cleanup_gl;
+    }
 
-    if (image_load("models/container2.png")){
+    //Cube specular map
+    unsigned int specular_map;
+    glGenTextures(1, &specular_map);
+    glBindTexture(GL_TEXTURE_2D, specular_map);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (image_to_texture("models/container2_specular.png")){
         status = FAILURE;
         goto cleanup_gl;
     }
@@ -225,15 +236,31 @@ int main(){
         fprintf(stderr, "cube shader compilation error\n");
         goto cleanup_gl;
     }
+
+    /* This is the moment that textures get bound to texture units.
+     * It is these texture unit ids (0 and 1 here) that get referenced
+     * by the shaders.
+     * I got confused by the texture IDs (eg. diffuse_map is 1 and
+     * specular_map is 2 when printf'ing them). You can generate in principal
+     * a large number of textures, but can only bind a few to texture units
+     * at a time (the minimun guaranteed in GL 4.x is 16 per stage with 6
+     * stages, including compute shaders).
+     */
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffuse_map);
+    glEnable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specular_map);
+    glEnable(GL_DEPTH_TEST);
+
     cube_shaders->use(cube_shaders);
     cube_shaders->setVec3(cube_shaders, "light_color", light_color);
     cube_shaders->setInt(cube_shaders, "material.diffuse", 0);
-    vec3 cube_specular = {0.5f, 0.5f, 0.5f};
+    cube_shaders->setInt(cube_shaders, "material.specular", 1);
     vec3 light_ambient = {0.2f, 0.2f, 0.2f};
     vec3 light_diffuse = {0.5f, 0.5f, 0.5f};
     vec3 light_specular = {1.f, 1.f, 1.f};
     float shininess = 32.0f;
-    cube_shaders->setVec3(cube_shaders, "material.specular", cube_specular);
     cube_shaders->setFloat(cube_shaders, "material.shininess", shininess);
     cube_shaders->setVec3(cube_shaders, "light.ambient", light_ambient);
     cube_shaders->setVec3(cube_shaders, "light.diffuse", light_diffuse);
@@ -256,11 +283,6 @@ int main(){
     shader_introspection(cube_shaders);
     */
 
-    glBindVertexArray(cube_VAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffuse_map);
-    glEnable(GL_DEPTH_TEST);
-
     int numFrames = 0;
     float past = (float)glfwGetTime();
     mat4x4 model;
@@ -279,6 +301,7 @@ int main(){
         glfwCompatKeyboardCallback(window);
 
         // Update colors
+        /*
         light_color[0] = sin(2.f*time);
         light_color[1] = sin(0.7f*time);
         light_color[2] = sin(1.3f*time);
@@ -288,6 +311,7 @@ int main(){
         light_ambient[0] = sin(0.2f*2.f*time);
         light_ambient[1] = sin(0.2f*0.7f*time);
         light_ambient[2] = sin(0.2f*1.3f*time);
+        */
 
         // draw the light
         light_shaders->use(light_shaders);

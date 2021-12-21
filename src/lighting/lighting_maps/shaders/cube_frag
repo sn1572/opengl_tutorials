@@ -10,7 +10,7 @@ out vec4 frag_color;
 // WARN: sampler2D can only ever be a uniform!
 struct Material {
     sampler2D diffuse;
-    vec3 specular;
+    sampler2D specular;
     float shininess;
 };
 struct Light {
@@ -46,7 +46,8 @@ void main(){
     reflect_direction = reflect(-light_direction, normalized_normal);
     specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
                        material.shininess);
-    specular = material.specular * specular_dot * light.specular;
+    specular = vec3(texture(material.specular, texture_coordinates)) * \
+                 specular_dot * light.specular;
     diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
     diffuse = diffuse_dot * light.diffuse * \
                 vec3(texture(material.diffuse, texture_coordinates));

@@ -18,7 +18,7 @@
 #define FAILURE 1;
 
 
-static char cube_frag_source[] = "shaders/spotlight_frag";
+static char cube_frag_source[] = "shaders/cube_frag";
 static char cube_vert_source[] = "shaders/cube_vert";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
@@ -85,6 +85,14 @@ float cubePositions[] = {
     1.5f,  2.0f, -2.5f, 
     1.5f,  0.2f, -1.5f, 
     -1.3f,  1.0f, -1.5f
+};
+
+
+vec3 light_positions[] = {
+    {0.7f, 0.2f, 2.0f},
+    {2.3f, -3.3f, -4.0f},
+    {-4.0f, 2.0f, -12.0f},
+    {0.f, 0.f, -3.f}
 };
 
 
@@ -249,16 +257,44 @@ int main(){
     setInt(cube_shaders, "material.specular", 1);
     float shininess = 32.0f;
     setFloat(cube_shaders, "material.shininess", shininess);
-    vec3 light_position = {5,5,0};
-    vec3 light_direction = {-1.f, -1.f, 0.f};
     vec3 light_ambient = {0.4f, 0.4f, 0.4f};
-    vec3 light_diffuse = {3.f, 3.f, 3.f};
-    vec3 light_specular = {10.f, 10.f, 10.f};
-    setVec3(cube_shaders, "light.position", light_position);
-    setVec3(cube_shaders, "light.ambient", light_ambient);
-    setVec3(cube_shaders, "light.diffuse", light_diffuse);
-    setVec3(cube_shaders, "light.specular", light_specular);
-    setVec3(cube_shaders, "light.direction", light_direction);
+    vec3 light_diffuse = {1.f, 1.f, 1.f};
+    vec3 light_specular = {3.f, 3.f, 3.f};
+    // point lights
+    for (int light_index=0; light_index<4; light_index++){
+        char name[25];
+        snprintf(name, 20, "point_lights[%i].position", light_index);
+        setVec3(cube_shaders, name, light_positions[light_index]);
+        snprintf(name, 20, "point_lights[%i].ambient", light_index);
+        setVec3(cube_shaders, name, light_ambient);
+        snprintf(name, 20, "point_lights[%i].diffuse", light_index);
+        setVec3(cube_shaders, name, light_diffuse);
+        snprintf(name, 20, "point_lights[%i].specular", light_index);
+        setVec3(cube_shaders, name, light_specular);
+        snprintf(name, 20, "point_lights[%i].constant", light_index);
+        setVec3(cube_shaders, name, 1.f);
+        snprintf(name, 20, "point_lights[%i].linear", light_index);
+        setVec3(cube_shaders, name, 0.35f);
+        snprintf(name, 20, "point_lights[%i].quadratic", light_index);
+        setVec3(cube_shaders, name, 0.44f);
+    }
+    vec3 directional_ambient = {0.2f, 0.2f, 0.1f};
+    vec3 directional_diffuse = {0.3f, 0.3f, 0.2f};
+    vec3 directional_specular = {0.5f, 0.5f, 0.3f};
+    vec3 light_direction = {-0.2f, -1.f, -0.3f};
+    // directional light
+    setVec3(cube_shaders, "directional_light.ambient", directional_ambient);
+    setVec3(cube_shaders, "directional_light.diffuse", directional_ambient);
+    vec3 spotlight_ambient = {0.4f, 0.4f, 0.4f};
+    vec3 spotlight_diffuse = {3.f, 3.f, 3.f};
+    vec3 spotlight_specular = {10.f, 10.f, 10.f};
+    setVec3(cube_shaders, "directional_light.specular", directional_ambient);
+    // spotlight (update position and direction in main loop)
+    //setVec3(cube_shaders, "light.position", light_position);
+    //setVec3(cube_shaders, "light.direction", light_direction);
+    setVec3(cube_shaders, "light.ambient", spotlight_ambient);
+    setVec3(cube_shaders, "light.diffuse", spotlight_diffuse);
+    setVec3(cube_shaders, "light.specular", spotlight_specular);
     setFloat(cube_shaders, "light.theta_taper_start", 0.9f);
     setFloat(cube_shaders, "light.theta_min", 0.8f);
 
@@ -304,8 +340,8 @@ int main(){
         glBindVertexArray(light_VAO);
         cam->setViewMatrix(cam, light_shaders, "view");
         cam->setProjectionMatrix(cam, light_shaders, "projection");
-        mat4x4_translate(model, light_position[0],
-                         light_position[1], light_position[2]);
+        mat4x4_translate(model, light_positions[0][0],
+                         light_positions[0][1], light_positions[0][2]);
         sendMatrixToShader(model, "model", light_shaders);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 

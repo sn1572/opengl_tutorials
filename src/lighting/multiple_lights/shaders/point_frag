@@ -45,7 +45,7 @@ vec4 total;
 void main(){
     normalized_normal = normalize(normal);
     light_direction = normalize(light.position - fragment_position);
-    distance = length(light_direction);
+    distance = length(light.position - fragment_position);
     attenuation = 1.0 / (light.constant + light.linear * distance + \
                          light.quadratic * (distance * distance));
     view_direction = normalize(camera_position - fragment_position);

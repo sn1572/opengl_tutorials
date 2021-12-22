@@ -132,15 +132,8 @@ int main(){
 
     // frame buffer size callback
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // Track mouse callback
-    // Function comes from the camera module
     glfwSetCursorPosCallback(window, glfwCompatMouseMovementCallback);
-
-    // Scroll wheel callback
-    // Function comes from the camera module
     glfwSetScrollCallback(window, glfwCompatMouseScrollCallback);
-
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // The light's VAO
@@ -255,51 +248,49 @@ int main(){
     use(cube_shaders);
     setInt(cube_shaders, "material.diffuse", 0);
     setInt(cube_shaders, "material.specular", 1);
-    float shininess = 32.0f;
-    setFloat(cube_shaders, "material.shininess", shininess);
-    vec3 light_ambient = {0.4f, 0.4f, 0.4f};
-    vec3 light_diffuse = {1.f, 1.f, 1.f};
-    vec3 light_specular = {3.f, 3.f, 3.f};
+    setFloat(cube_shaders, "material.shininess", 32.f);
     // point lights
+    vec3 point_ambient = {0.4f, 0.4f, 0.4f};
+    vec3 point_diffuse = {1.f, 1.f, 1.f};
+    vec3 point_specular = {3.f, 3.f, 3.f};
     for (int light_index=0; light_index<4; light_index++){
         char name[25];
         snprintf(name, 20, "point_lights[%i].position", light_index);
         setVec3(cube_shaders, name, light_positions[light_index]);
         snprintf(name, 20, "point_lights[%i].ambient", light_index);
-        setVec3(cube_shaders, name, light_ambient);
+        setVec3(cube_shaders, name, point_ambient);
         snprintf(name, 20, "point_lights[%i].diffuse", light_index);
-        setVec3(cube_shaders, name, light_diffuse);
+        setVec3(cube_shaders, name, point_diffuse);
         snprintf(name, 20, "point_lights[%i].specular", light_index);
-        setVec3(cube_shaders, name, light_specular);
+        setVec3(cube_shaders, name, point_specular);
         snprintf(name, 20, "point_lights[%i].constant", light_index);
-        setVec3(cube_shaders, name, 1.f);
+        setFloat(cube_shaders, name, 1.f);
         snprintf(name, 20, "point_lights[%i].linear", light_index);
-        setVec3(cube_shaders, name, 0.35f);
+        setFloat(cube_shaders, name, 0.35f);
         snprintf(name, 20, "point_lights[%i].quadratic", light_index);
-        setVec3(cube_shaders, name, 0.44f);
+        setFloat(cube_shaders, name, 0.44f);
     }
+    // directional light
     vec3 directional_ambient = {0.2f, 0.2f, 0.1f};
     vec3 directional_diffuse = {0.3f, 0.3f, 0.2f};
     vec3 directional_specular = {0.5f, 0.5f, 0.3f};
-    vec3 light_direction = {-0.2f, -1.f, -0.3f};
-    // directional light
+    vec3 directional_direction = {-0.2f, -1.f, -0.3f};
     setVec3(cube_shaders, "directional_light.ambient", directional_ambient);
-    setVec3(cube_shaders, "directional_light.diffuse", directional_ambient);
+    setVec3(cube_shaders, "directional_light.diffuse", directional_diffuse);
+    setVec3(cube_shaders, "directional_light.specular", directional_specular);
+    setVec3(cube_shaders, "directional_light.direction", directional_direction);
+    // spotlight (update position and direction in main loop)
     vec3 spotlight_ambient = {0.4f, 0.4f, 0.4f};
     vec3 spotlight_diffuse = {3.f, 3.f, 3.f};
     vec3 spotlight_specular = {10.f, 10.f, 10.f};
-    setVec3(cube_shaders, "directional_light.specular", directional_ambient);
-    // spotlight (update position and direction in main loop)
-    //setVec3(cube_shaders, "light.position", light_position);
-    //setVec3(cube_shaders, "light.direction", light_direction);
-    setVec3(cube_shaders, "light.ambient", spotlight_ambient);
-    setVec3(cube_shaders, "light.diffuse", spotlight_diffuse);
-    setVec3(cube_shaders, "light.specular", spotlight_specular);
-    setFloat(cube_shaders, "light.theta_taper_start", 0.9f);
-    setFloat(cube_shaders, "light.theta_min", 0.8f);
+    setVec3(cube_shaders, "spotlight.ambient", spotlight_ambient);
+    setVec3(cube_shaders, "spotlight.diffuse", spotlight_diffuse);
+    setVec3(cube_shaders, "spotlight.specular", spotlight_specular);
+    setFloat(cube_shaders, "spotlight.theta_taper_start", 0.9f);
+    setFloat(cube_shaders, "spotlight.theta_min", 0.8f);
 
     light_shaders->use(light_shaders);
-    light_shaders->setVec3(light_shaders, "light.ambient", light_specular);
+    light_shaders->setVec3(light_shaders, "light.ambient", spotlight_diffuse);
 
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR){
@@ -332,23 +323,31 @@ int main(){
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glfwCompatKeyboardCallback(window);
 
-        // draw the light
+        // draw the lights
         light_shaders->use(light_shaders);
         glBindVertexArray(light_VAO);
         cam->setViewMatrix(cam, light_shaders, "view");
         cam->setProjectionMatrix(cam, light_shaders, "projection");
-        mat4x4_translate(model, light_positions[0][0],
-                         light_positions[0][1], light_positions[0][2]);
-        sendMatrixToShader(model, "model", light_shaders);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (int i=0; i<4; i++){
+            mat4x4_translate(model, light_positions[i][0],
+                             light_positions[i][1], light_positions[i][2]);
+            mat4x4_scale(model, model, 0.1f);
+            sendMatrixToShader(model, "model", light_shaders);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         // draw cubes
         cube_shaders->use(cube_shaders);
         glBindVertexArray(cube_VAO);
         cube_shaders->setVec3(cube_shaders, "camera_position", *cam->position);
+        setVec3(cube_shaders, "spotlight.position", *cam->position);
+        setVec3(cube_shaders, "spotlight.direction", *cam->front);
+        printf("cam pos: %4.2f %4.2f %4.2f\n", *cam->position[0],
+               *cam->position[1], *cam->position[2]);
+        printf("cam front: %4.2f %4.2f %4.2f\n", *cam->front[0],
+               *cam->front[1], *cam->front[2]);
         cam->setViewMatrix(cam, cube_shaders, "view");
         cam->setProjectionMatrix(cam, cube_shaders, "projection");
         

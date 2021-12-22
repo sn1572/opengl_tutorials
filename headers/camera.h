@@ -103,20 +103,29 @@
     // Module export functions
     void setActiveCamera(struct Camera * cam);
     void glfwCompatKeyboardCallback(GLFWwindow * window);
-    void glfwCompatMouseMovementCallback(GLFWwindow * window, double xPos, double yPos);
-    void glfwCompatMouseScrollCallback(GLFWwindow * window, double xPos, double yPos);
+    void glfwCompatMouseMovementCallback(GLFWwindow * window, double xPos,
+                                         double yPos);
+    void glfwCompatMouseScrollCallback(GLFWwindow * window, double xPos,
+                                       double yPos);
     void cameraFree(struct Camera * cam);
-    cameraError_t setCameraPosition(struct Camera * cam, float x, float y, float z);
+    cameraError_t setCameraPosition(struct Camera * cam, float x, float y,
+                                    float z);
     void setActiveCameraPosition(float x, float y, float z);
     struct Camera * cameraInit(int width, int height);
-    void sendMatrixToShader(mat4x4 matrix, const char * name, struct Shader * shaders);
+    void sendMatrixToShader(mat4x4 matrix, const char * name,
+                            struct Shader * shaders);
 
     // Camera struct functions
-    static void setViewMatrix(struct Camera * self, struct Shader * shaders, const char * handle);
-    static void setProjectionMatrix(struct Camera * self, struct Shader * shaders, const char * handle);
+    static void setViewMatrix(struct Camera * self, struct Shader * shaders,
+                              const char * handle);
+    static void setProjectionMatrix(struct Camera * self,
+                                    struct Shader * shaders,
+                                    const char * handle);
     static void processKeyboard(struct Camera * self, GLFWwindow * window);
-    static void processMouseMovement(struct Camera * self, GLFWwindow * window, double xoffset, double yoffset);
-    static void processMouseScroll(struct Camera * self, GLFWwindow * window, double yoffset);
+    static void processMouseMovement(struct Camera * self, GLFWwindow * window,
+                                     double xoffset, double yoffset);
+    static void processMouseScroll(struct Camera * self, GLFWwindow * window,
+                                   double yoffset);
 
     // Module local functions
     static void updateCameraVectors(struct Camera * self);

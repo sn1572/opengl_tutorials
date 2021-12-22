@@ -13,7 +13,8 @@ struct Material {
     sampler2D specular;
     float shininess;
 };
-struct Light {
+
+struct SpotLight {
     vec3 position;
     vec3 direction;
     vec3 ambient;
@@ -22,13 +23,13 @@ struct Light {
     float theta_taper_start;
     float theta_min;
 };
+
 uniform Material material;
-uniform Light light;
-uniform vec3 ambient_color;
+uniform SpotLight spotlight;
 uniform vec3 camera_position;
 
 
-vec3 light_direction;
+vec3 frag_to_light_direction;
 vec3 view_direction;
 vec3 reflect_direction;
 float diffuse_dot;
@@ -44,25 +45,25 @@ vec4 total;
 
 void main(){
     normalized_normal = normalize(normal);
-    light_direction = normalize(light.position - fragment_position);
-    theta = dot(light_direction, normalize(-light.direction));
-    if (theta > light.theta_min){
-        theta = theta-light.theta_min;
-        intensity = min(theta / (light.theta_taper_start - light.theta_min),
-                        1.0);
+    frag_to_light_direction = normalize(spotlight.position - fragment_position);
+    theta = dot(-frag_to_light_direction, normalize(spotlight.direction));
+    if (theta > spotlight.theta_min){
+        theta -= spotlight.theta_min;
+        intensity = min(theta / (spotlight.theta_taper_start - \
+                        spotlight.theta_min), 1.0);
     } else{
         intensity = 0.0;
     }
     view_direction = normalize(camera_position - fragment_position);
-    reflect_direction = reflect(-light_direction, normalized_normal);
+    reflect_direction = reflect(-frag_to_light_direction, normalized_normal);
     specular_dot = pow(max(dot(view_direction, reflect_direction), 0.0), 
                        material.shininess);
     specular = vec3(texture(material.specular, texture_coordinates)) * \
-                 specular_dot * light.specular;
-    diffuse_dot = max(dot(normalized_normal, light_direction), 0.0);
-    diffuse = diffuse_dot * light.diffuse * \
+                 specular_dot * spotlight.specular;
+    diffuse_dot = max(dot(normalized_normal, frag_to_light_direction), 0.0);
+    diffuse = diffuse_dot * spotlight.diffuse * \
                 vec3(texture(material.diffuse, texture_coordinates));
-    ambient = light.ambient * vec3(texture(material.diffuse,
+    ambient = spotlight.ambient * vec3(texture(material.diffuse,
                                            texture_coordinates));
     diffuse *= intensity;
     ambient *= intensity;

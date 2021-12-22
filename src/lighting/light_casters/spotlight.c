@@ -259,8 +259,8 @@ int main(){
     setVec3(cube_shaders, "light.diffuse", light_diffuse);
     setVec3(cube_shaders, "light.specular", light_specular);
     setVec3(cube_shaders, "light.direction", light_direction);
-    setFloat(cube_shaders, "light.theta_taper_start", 0.9f);
-    setFloat(cube_shaders, "light.theta_min", 0.8f);
+    setFloat(cube_shaders, "light.theta_taper_start", 0.96f);
+    setFloat(cube_shaders, "light.theta_min", 0.95f);
 
     light_shaders->use(light_shaders);
     light_shaders->setVec3(light_shaders, "light.ambient", light_specular);
@@ -313,6 +313,8 @@ int main(){
         cube_shaders->use(cube_shaders);
         glBindVertexArray(cube_VAO);
         cube_shaders->setVec3(cube_shaders, "camera_position", *cam->position);
+        setVec3(cube_shaders, "light.direction", *cam->front);
+        setVec3(cube_shaders, "light.position", *cam->position);
         cam->setViewMatrix(cam, cube_shaders, "view");
         cam->setProjectionMatrix(cam, cube_shaders, "projection");
         

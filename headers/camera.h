@@ -129,5 +129,5 @@
 
     // Module local functions
     static void updateCameraVectors(struct Camera * self);
-    static cameraError_t flatten(float * out, mat4x4 M);
+    cameraError_t flatten(float * out, mat4x4 M);
 #endif

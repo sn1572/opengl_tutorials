@@ -131,12 +131,10 @@ void main(){
                                    view_direction);
     total += calc_spotlight(spotlight, normalized_normal,
                             fragment_position, view_direction);
-    /*
     for (i=0; i<4; i++){
         total += calc_point_light(point_lights[i], normalized_normal,
                                   fragment_position, view_direction);
     }
-    */
 	frag_color = texture(material.diffuse, texture_coordinates) * \
                  vec4(total, 1.0);
 }

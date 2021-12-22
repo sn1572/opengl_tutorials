@@ -27,7 +27,7 @@ void glfwCompatMouseScrollCallback(GLFWwindow * window, double xPos,
 }
 
 
-static cameraError_t flatten(float * out, mat4x4 M){
+cameraError_t flatten(float * out, mat4x4 M){
     if (!out)
         return CAM_NULL_PTR;
     if (!M)

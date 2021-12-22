@@ -344,10 +344,10 @@ int main(){
         cube_shaders->setVec3(cube_shaders, "camera_position", *cam->position);
         setVec3(cube_shaders, "spotlight.position", *cam->position);
         setVec3(cube_shaders, "spotlight.direction", *cam->front);
-        printf("cam pos: %4.2f %4.2f %4.2f\n", *cam->position[0],
-               *cam->position[1], *cam->position[2]);
-        printf("cam front: %4.2f %4.2f %4.2f\n", *cam->front[0],
-               *cam->front[1], *cam->front[2]);
+        printf("cam pos: %4.2f %4.2f %4.2f\n", (*cam->position)[0],
+               (*cam->position)[1], (*cam->position)[2]);
+        printf("cam front: %4.2f %4.2f %4.2f\n", (*cam->front)[0],
+               (*cam->front)[1], (*cam->front)[2]);
         cam->setViewMatrix(cam, cube_shaders, "view");
         cam->setProjectionMatrix(cam, cube_shaders, "projection");
         

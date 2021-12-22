@@ -275,16 +275,16 @@ int main(){
     }
     // directional light
     vec3 directional_ambient = {0.1f, 0.1f, 0.1f};
-    vec3 directional_diffuse = {0.3f, 0.3f, 0.3f};
-    vec3 directional_specular = {0.5f, 0.5f, 0.5f};
+    vec3 directional_diffuse = {2.f, 0.3f, 0.3f};
+    vec3 directional_specular = {3.f, 0.5f, 0.5f};
     vec3 directional_direction = {-0.2f, -1.f, -0.3f};
     setVec3(cube_shaders, "directional_light.ambient", directional_ambient);
     setVec3(cube_shaders, "directional_light.diffuse", directional_diffuse);
     setVec3(cube_shaders, "directional_light.specular", directional_specular);
     setVec3(cube_shaders, "directional_light.direction", directional_direction);
     // spotlight (update position and direction in main loop)
-    vec3 spotlight_ambient = {0.4f, 0.4f, 0.4f};
-    vec3 spotlight_diffuse = {2.f, 2.f, 0.5f};
+    vec3 spotlight_ambient = {0.4f, 0.4f, 0.f};
+    vec3 spotlight_diffuse = {1.f, 1.f, 1.f};
     vec3 spotlight_specular = {3.f, 3.f, 3.f};
     setVec3(cube_shaders, "spotlight.ambient", spotlight_ambient);
     setVec3(cube_shaders, "spotlight.diffuse", spotlight_diffuse);
@@ -293,7 +293,7 @@ int main(){
     setFloat(cube_shaders, "spotlight.theta_min", 0.99f);
 
     light_shaders->use(light_shaders);
-    light_shaders->setVec3(light_shaders, "light.ambient", spotlight_diffuse);
+    light_shaders->setVec3(light_shaders, "light.ambient", directional_diffuse);
 
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR){

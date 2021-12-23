@@ -43,7 +43,11 @@ model_error_t draw(Shader * shader, Mesh mesh)
     model_error_t result = MODEL_SUCCESS;
     unsigned int diffuse_count = 1;
     unsigned int specular_count = 1;
-    const int max_unif_name = 50;
+    /* May get quiet errors if the name string is not long enough,
+     * resulting in invalid uniform names being sent to the shader.
+     * The shader generally won't tell you if that happens.
+     */
+    const int max_unif_name = 128;
     char name[max_unif_name];
 
     for (unsigned int i=0; i < mesh.num_textures; i++){
@@ -62,4 +66,11 @@ model_error_t draw(Shader * shader, Mesh mesh)
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    #ifdef MODEL_DEBUG
+    if (glGetError() != GL_NO_ERROR){
+        result = MODEL_GL_ERR;
+    }
+    #endif
+    return result;
 }

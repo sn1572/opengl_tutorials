@@ -6,6 +6,9 @@
     #include <shader.h>
     #include <GLFW/glfw3.h>
     #include <stddef.h>
+    #include <assimp/scene.h>
+    #include <assimp/postprocess.h>
+    #include <assimp/Importer.hpp>
 
     typedef enum {
         MODEL_SUCCESS,
@@ -45,7 +48,18 @@
     };
     typedef struct Mesh Mesh;
 
+    struct Model {
+        char * file_path;
+        Mesh * meshes;
+        char * directory;
+    };
+    typedef struct Model Model;
+
     model_error_t setup_mesh(Mesh mesh);
     model_error_t draw(Shader * shader, Mesh mesh);
-
+    model_error_t load_model(Model model);
+    model_error_t process_node(aiNode * node, const aiScene * scene);
+    Mesh process_mesh(aiMesh * mesh, const aiScene * scene);
+    Texture * load_material_textures(aiMaterial * material, aiTextureType type,
+                                     char * type_name);
 #endif

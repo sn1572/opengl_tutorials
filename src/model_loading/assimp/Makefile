@@ -4,9 +4,9 @@ lib_dir = ../../../lib
 libs = ../../../lib/shader ../../../lib/camera
 lib_srcs = ../../shader.c ../../camera.c
 binaries = main
-glad_install_dir = /home/mark/Documents/C/glad
-assimp_include_dir = /home/mark/Projects/assimp-5.0.1/build/include/assimp
-assimp_lib_dir = /home/mark/Projects/assimp-5.0.1/build/code
+glad_install_dir = /opt/glad
+assimp_include_dir = /home/markbolding/Documents/assimp-5.0.1/build/include/assimp
+assimp_lib_dir = /home/markbolding/Documents/assimp-5.0.1/build/code
 
 all: $(binaries)
 

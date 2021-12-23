@@ -4,7 +4,7 @@ CC = gcc
 headers = ../headers
 libs = ../lib
 solibs = ../lib/libshader.so ../lib/libcamera.so
-glad_install_dir = /home/mark/Documents/C/glad
+glad_install_dir = /opt/glad
 
 all: $(solibs)
 

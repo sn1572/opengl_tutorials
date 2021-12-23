@@ -33,6 +33,7 @@
         shader_err_t (*setVec3)(struct Shader * self, const char * name, 
                                 vec3 vec);
     };
+    typedef struct Shader Shader;
 
     shader_err_t readFile(const char * fname, char ** buffer);
     shader_err_t load(struct Shader * self, char * vertexPath,

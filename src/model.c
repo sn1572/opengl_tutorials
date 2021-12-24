@@ -38,7 +38,7 @@ model_error_t setup_mesh(Mesh mesh)
 }
 
 
-model_error_t draw(Shader * shader, Mesh mesh)
+model_error_t draw_mesh(Shader * shader, Mesh mesh)
 {
     model_error_t result = MODEL_SUCCESS;
     unsigned int diffuse_count = 1;
@@ -72,5 +72,15 @@ model_error_t draw(Shader * shader, Mesh mesh)
         result = MODEL_GL_ERR;
     }
     #endif
+    return result;
+}
+
+
+model_error_t draw_model(Shader * shader, Model model)
+{
+    model_error_t result = MODEL_SUCCESS;
+    for (int i=0; i < model.num_meshes; i++){
+        result = draw_mesh(shader, model.meshes[i]);
+    }
     return result;
 }

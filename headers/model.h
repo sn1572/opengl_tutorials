@@ -11,10 +11,10 @@
     #include <assimp/Importer.hpp>
 
     typedef enum {
-        MODEL_SUCCESS,
-        MODEL_NO_MEM,
-        MODEL_NULL_PTR,
-        MODEL_GL_ERR,
+        MODEL_SUCCESS =  0,
+        MODEL_NO_MEM =   -1,
+        MODEL_NULL_PTR = -2,
+        MODEL_GL_ERR =   -3,
     } model_error_t;
 
     struct Vertex {
@@ -49,17 +49,19 @@
     typedef struct Mesh Mesh;
 
     struct Model {
-        char * file_path;
-        Mesh * meshes;
-        char * directory;
+        char *       file_path;
+        Mesh *       meshes;
+        unsigned int num_meshes;
+        char *       directory;
     };
     typedef struct Model Model;
 
     model_error_t setup_mesh(Mesh mesh);
-    model_error_t draw(Shader * shader, Mesh mesh);
+    model_error_t draw_mesh(Shader * shader, Mesh mesh);
     model_error_t load_model(Model model);
     model_error_t process_node(aiNode * node, const aiScene * scene);
     Mesh process_mesh(aiMesh * mesh, const aiScene * scene);
     Texture * load_material_textures(aiMaterial * material, aiTextureType type,
                                      char * type_name);
+    model_error_t draw_model(Shader * shader, Model model);
 #endif

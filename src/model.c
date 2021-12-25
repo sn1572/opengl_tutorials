@@ -106,7 +106,8 @@ model_error_t load_model(Model model)
         fprintf(stderr, "Assimp error: %s\n", import.GetErrorString());
         return MODEL_ASSIMP_ERR;
     }
-    model.directory = path.substr(0, path.find_last_of('/'));
+    model.directory = model.file_path.substr(0, 
+                        model.file_path.find_last_of('/'));
     model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
     process_node(model, scene->mRootNode, scene, 0);
     return MODEL_SUCCESS
@@ -117,18 +118,22 @@ model_error_t process_node(Model model, aiNode * node, const aiScene * scene,
                            int index)
 {
     model_error_t result = MODEL_SUCCESS;
-    Mesh * mesh = NULL;
+    Mesh mesh;
     aiMesh * ai_mesh = NULL;
 
     for (int i = 0; i < node->mNumMeshes; i++){
         /* If loading succeeded this pointer should be valid. */
         ai_mesh = scene->mMeshes[node->mMeshes[i]];
+        /*
+        // mesh needs to be a Mesh * mesh for this version
         mesh = calloc(1, sizeof(Mesh));
         if (!mesh){
             fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
             return MODEL_NO_MEM;
         }
-        *mesh = process_mesh(ai_mesh, scene);
+        process_mesh(ai_mesh, scene, model.directory, mesh);
+        */
+        process_mesh(ai_mesh, scene, model.directory, &mesh);
         model.meshes[index++] = mesh;
     }
     for (int i = 0; i < node->mNumChildren; i++){
@@ -141,7 +146,8 @@ model_error_t process_node(Model model, aiNode * node, const aiScene * scene,
 }
 
 
-Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
+model_error_t process_mesh(aiMesh * mesh, const aiScene * scene,
+                           char * directory, Mesh * out)
 {
     Mesh out;
     vec3 vector;
@@ -161,7 +167,7 @@ Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
     if (!out->vertices){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         free(out);
-        return NULL;
+        return MODEL_NO_MEM;
     }
     for (int i = 0; i < mesh->mNumVertices; i++){
         vector = {mesh->mVertices[i].x, mesh->mVertices[i].y,
@@ -193,7 +199,7 @@ Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         free(out->vertices);
         free(out);
-        return NULL;
+        return MODEL_NO_MEM;
     }
     for (int i = 0; i < mesh->mNumFaces; i++){
         face = mesh->mFaces[i];
@@ -206,19 +212,27 @@ Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
     if (mesh->mMaterialIndex >= 0){
         material = scene->mMaterials[mesh->mMaterialIndex];
         diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE,
-                                              DIFFUSE, &num_diffuse_textures);
+                                              DIFFUSE, &num_diffuse_textures,
+                                              directory);
         specular_maps = load_material_textures(material,
                                                aiTextureType_SPECULAR,
                                                SPECULAR,
-                                               &num_specular_textures);
+                                               &num_specular_textures,
+                                               directory);
         out->textures = malloc((num_diffuse_textures + \
                                 num_specular_textures) * sizeof(Texture));
         if (!out->textures || !diffuse_maps || !specular_maps){
             fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
             free(out->vertices);
             free(out->indices);
+            if (out->textures)
+                free(out->textures);
+            if (diffuse_maps)
+                free(diffuse_maps);
+            if (specular_maps)
+                free(specular_maps);
             free(out);
-            return NULL;
+            return MODEL_ERR;
         }
         for (int i = 0; i < num_diffuse_textures; i++){
             out->textures[i] = diffuse_maps[i];
@@ -235,7 +249,82 @@ Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
 
 
 Texture * load_material_textures(aiMaterial * mat, aiTextureType type,
-                                 texture_t type_name, int * count)
+                                 texture_t type_name, int * count,
+                                 char * directory)
 {
     /* Store the number of textures found in count. */
+    aiString string;
+    Texture * textures = NULL;
+    unsigned int texture_id;
+    Texture texture;
+
+    if (!mat->GetTextureCount(type)){
+        fprintf(stderr, "%s %d: %s: Material has no textures!\n", __FILE__,
+                __LINE__, __func__);
+        return NULL;
+    }
+    textures = malloc(mat->GetTextureCount(type) * sizeof(Texture));
+    if (!texture){
+        fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+        return NULL;
+    }
+    for (int i = 0; i < mat->GetTextureCount(type); i++){
+        mat->GetTexture(type, i, &string);
+        if (!texture_from_file(string.C_Str(), directory, &texture_id)){
+            free(textures);
+            fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
+                    __LINE__);
+            return NULL;
+        }
+        texture.id = texture_id;
+        texture.type = type_name;
+        texture.path = string.C_Str();
+        textures[i] = texture;
+    }
+    return textures;
+}
+
+
+model_error_t texture_from_file(char * file_name, char * directory,
+                                unsigned int * texture_id){
+    int width, height, nrChannels;
+    const int max_file_name = 256;
+    char full_name[max_file_name];
+
+    snprintf(full_name, max_file_name, "%s/%s", directory, file_name);
+    printf("Texture full path:\n%s\n", full_name);
+    unsigned char * data = stbi_load(full_name, &width, &height,
+                                     &nrChannels, 0);
+    if (data){
+        GLenum format;
+        switch(nrChannels){
+            case 3:
+                format = GL_RGB;
+                break;
+            case 4:
+                format = GL_RGBA;
+                break;
+            default:
+                fprintf(stderr, "%s %d: Unrecognized number of channels: %i\n",
+                        __FILE__, __LINE__, nrChannels);
+                stbi_image_free(data);
+                return MODEL_STB_ERR;
+        }
+        glGenTextures(1, texture_id);
+        glBindTexture(GL_TEXTURE_2D, *texture_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(data);
+        return MODEL_SUCCESS;
+    }
+    else{
+        fprintf(stderr, "%f %d: Failed to load texture\n", __FILE__,
+                __LINE__);
+        return MODEL_STB_ERR;
+    }
 }

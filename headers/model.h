@@ -17,6 +17,7 @@
         MODEL_UNEXP_ALLOC = -3,
         MODEL_NO_MEM =      -4,
         MODEL_ERR =         -5,
+        MODEL_STB_ERR =     -6,
     } model_error_t;
 
     struct Vertex {
@@ -34,6 +35,7 @@
     struct Texture {
         unsigned int id;
         texture_t type;
+        char * path;
     };
     typedef struct Texture Texture;
 
@@ -64,7 +66,11 @@
     model_error_t load_model(Model model);
     model_error_t process_node(Model model, aiNode * node,
                                const aiScene * scene, int index);
-    Mesh process_mesh(aiMesh * mesh, const aiScene * scene);
+    model_error_t process_mesh(aiMesh * mesh, const aiScene * scene,
+                               char * directory, Mesh * out);
     Texture * load_material_textures(aiMaterial * material, aiTextureType type,
-                                     texture_t type_name, int * count);
+                                     texture_t type_name, int * count,
+                                     char * directory);
+    model_error_t texture_from_file(char * fname, char * directory,
+                                    unsigned int * texture_id);
 #endif

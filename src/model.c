@@ -291,6 +291,9 @@ model_error_t texture_from_file(char * file_name, char * directory,
     if (data){
         GLenum format;
         switch(nrChannels){
+            case 1:
+                format = GL_RED;
+                break;
             case 3:
                 format = GL_RGB;
                 break;

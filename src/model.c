@@ -84,3 +84,158 @@ model_error_t draw_model(Shader * shader, Model model)
     }
     return result;
 }
+
+
+model_error_t load_model(Model model)
+{
+    /* Filthy, unclean c++. Begone, TCPPOT. */
+    int count = 0;
+    Assimp::Importer import;
+    const aiScene * scene = import.ReadFile(model.file_path,
+                                            aiProcess_Triangulate | \
+                                            aiProcess_FlipUVs | \
+                                            aiProcess_GenNormals);
+    if (model.meshes){
+        /* This guarantees model.meshes == NULL */
+        fprintf(stderr, "This model already contains data.\n");
+        return MODEL_UNEXP_ALLOC;
+    }
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
+        !scene->mRootNode)
+    {
+        fprintf(stderr, "Assimp error: %s\n", import.GetErrorString());
+        return MODEL_ASSIMP_ERR;
+    }
+    model.directory = path.substr(0, path.find_last_of('/'));
+    model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
+    process_node(model, scene->mRootNode, scene, 0);
+    return MODEL_SUCCESS
+}
+
+
+model_error_t process_node(Model model, aiNode * node, const aiScene * scene,
+                           int index)
+{
+    model_error_t result = MODEL_SUCCESS;
+    Mesh * mesh = NULL;
+    aiMesh * ai_mesh = NULL;
+
+    for (int i = 0; i < node->mNumMeshes; i++){
+        /* If loading succeeded this pointer should be valid. */
+        ai_mesh = scene->mMeshes[node->mMeshes[i]];
+        mesh = calloc(1, sizeof(Mesh));
+        if (!mesh){
+            fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+            return MODEL_NO_MEM;
+        }
+        *mesh = process_mesh(ai_mesh, scene);
+        model.meshes[index++] = mesh;
+    }
+    for (int i = 0; i < node->mNumChildren; i++){
+        result = process_node(model, node->mChildren[i], scene, index);
+        if (!result){
+            break;
+        }
+    }
+    return result;
+}
+
+
+Mesh process_mesh(aiMesh * mesh, const aiScene * scene)
+{
+    Mesh out;
+    vec3 vector;
+    vec2 vector2;
+    Vertex vertex;
+    int num_indices = 0;
+    aiFace face;
+    int count = 0;
+    aiMaterial * material;
+    Texture * diffuse_maps = NULL;
+    Texture * specular_maps = NULL;
+    int num_diffuse_textures = 0;
+    int num_specular_textures = 0;
+
+    /* Vertex processing */
+    out->vertices = malloc(mesh->mNumVertices * sizeof(Vertex));
+    if (!out->vertices){
+        fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+        free(out);
+        return NULL;
+    }
+    for (int i = 0; i < mesh->mNumVertices; i++){
+        vector = {mesh->mVertices[i].x, mesh->mVertices[i].y,
+                  mesh->mVertices[i].z};
+        vertex.position = vector;
+        vector = {mesh->mNormals[i].x, mesh->mNormals[i].y,
+                  mesh->mNormals[i].z};
+        vertex.normal = vector;
+        /* There are up to 8 different texture coordinates per vertex.
+         * For now we just load the first, if it exists.
+         */
+        if (mesh->mTextureCoords[0]){
+            vector2 = {mesh->mTextureCoords[0][i].x,
+                       mesh->mTextureCoords[0][i].y};
+            vertex.texture_coordinates = vector2;
+        } else{
+            vertex.texture_coordinates = {0.f, 0.f};
+        }
+        out->vertices[i] = vertex;
+    }
+    for (int i = 0; i < mesh->mNumFaces; i++){
+        face = mesh->mFaces[i];
+        num_indices += face.mNumIndices;
+    }
+
+    /* Index processing */
+    out->indices = malloc(num_indices * sizeof(unsigned int));
+    if (!out->indices){
+        fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+        free(out->vertices);
+        free(out);
+        return NULL;
+    }
+    for (int i = 0; i < mesh->mNumFaces; i++){
+        face = mesh->mFaces[i];
+        for (int j = 0; j < face.mNumIndices; j++){
+            out->indices[count++] = face.mIndices[j];
+        }
+    }
+
+    /* Texture processing */
+    if (mesh->mMaterialIndex >= 0){
+        material = scene->mMaterials[mesh->mMaterialIndex];
+        diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE,
+                                              DIFFUSE, &num_diffuse_textures);
+        specular_maps = load_material_textures(material,
+                                               aiTextureType_SPECULAR,
+                                               SPECULAR,
+                                               &num_specular_textures);
+        out->textures = malloc((num_diffuse_textures + \
+                                num_specular_textures) * sizeof(Texture));
+        if (!out->textures || !diffuse_maps || !specular_maps){
+            fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+            free(out->vertices);
+            free(out->indices);
+            free(out);
+            return NULL;
+        }
+        for (int i = 0; i < num_diffuse_textures; i++){
+            out->textures[i] = diffuse_maps[i];
+        }
+        for (int i = 0; i < num_specular_textures; i++){
+            out->textures[i+num_diffuse_textures] = specular_maps[i];
+        }
+        free(diffuse_maps);
+        free(specular_maps);
+    }
+
+    return out;
+}
+
+
+Texture * load_material_textures(aiMaterial * mat, aiTextureType type,
+                                 texture_t type_name, int * count)
+{
+    /* Store the number of textures found in count. */
+}

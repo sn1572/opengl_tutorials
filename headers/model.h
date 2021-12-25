@@ -9,6 +9,9 @@
     #include <assimp/scene.h>
     #include <assimp/postprocess.h>
     #include <assimp/Importer.hpp>
+    #include <libgen.h>
+    #define STB_IMAGE_IMPLEMENTATION
+    #include <stb_image.h>
 
     typedef enum {
         MODEL_SUCCESS =      0,

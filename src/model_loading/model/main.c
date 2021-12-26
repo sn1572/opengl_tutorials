@@ -68,19 +68,6 @@ int main(){
     float past, time;
     char model_path[] = "./models/backpack/backpack.obj";
 
-    Model backpack;
-    backpack.file_path = model_path;
-    backpack.meshes = NULL;
-    backpack.directory = NULL;
-    backpack.num_meshes = 0;
-    if (!load_model(backpack)){
-        fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
-                __LINE__);
-        goto end;
-    }
-    printf("Loaded backpack model, as far as I can tell.\n");
-    goto cleanup_glfw;
-
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -105,6 +92,20 @@ int main(){
 
     // set default window size
     glViewport(0, 0, WIDTH, HEIGHT);
+
+    Model backpack;
+    backpack.file_path = model_path;
+    backpack.meshes = NULL;
+    backpack.directory = NULL;
+    backpack.num_meshes = 0;
+    if (load_model(backpack) != MODEL_SUCCESS){
+        fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
+                __LINE__);
+        goto end;
+    } else{
+        printf("Backpack loaded successfully (as far as I can tell).\n");
+    }
+    goto cleanup_glfw;
 
     // Init the camera `object` and hook its methods into the callbacks
     struct Camera * cam;

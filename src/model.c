@@ -273,8 +273,8 @@ Texture * load_material_textures(struct aiMaterial * mat,
         /* arg i to aiGetMaterialTexture needs to be a uint */
         aiGetMaterialTexture(mat, type, i, &string, NULL, NULL, NULL, NULL,
                              NULL, NULL);
-        if (!texture_from_file(string.data, directory,
-                               &texture_id)){
+        if (texture_from_file(string.data, directory,
+                              &texture_id)){
             free(textures);
             fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
                     __LINE__);
@@ -294,13 +294,13 @@ model_error_t texture_from_file(char * file_name, char * directory,
     int width, height, nrChannels;
     const int max_file_name = 256;
     char full_name[max_file_name];
+    GLenum format;
 
     snprintf(full_name, max_file_name, "%s/%s", directory, file_name);
     printf("Texture full path:\n%s\n", full_name);
     unsigned char * data = stbi_load(full_name, &width, &height,
                                      &nrChannels, 0);
     if (data){
-        GLenum format;
         switch(nrChannels){
             case 1:
                 format = GL_RED;
@@ -319,13 +319,13 @@ model_error_t texture_from_file(char * file_name, char * directory,
         }
         glGenTextures(1, texture_id);
         glBindTexture(GL_TEXTURE_2D, *texture_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                     format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
         stbi_image_free(data);
         return MODEL_SUCCESS;
     }

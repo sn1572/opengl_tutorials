@@ -98,6 +98,7 @@ int main(){
     backpack.meshes = NULL;
     backpack.directory = NULL;
     backpack.num_meshes = 0;
+    backpack.loaded_textures = NULL;
     if (load_model(backpack) != MODEL_SUCCESS){
         fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
                 __LINE__);

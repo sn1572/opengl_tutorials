@@ -1,22 +1,28 @@
 #include <model.h>
 
 
-model_error_t setup_mesh(Mesh mesh)
+model_error_t setup_mesh(Mesh * mesh)
 {
+    /* Currently there is no cleanup for the buffers and arrays
+     * allocated below if this function fails...
+     * It is also not currently possible to tell if they've even
+     * been allocated. As a result it is currently best to terminate
+     * program execution if setup_mesh fails.
+     */
     model_error_t result = MODEL_SUCCESS;
 
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
+    glGenVertexArrays(1, &mesh->VAO);
+    glGenBuffers(1, &mesh->VBO);
+    glGenBuffers(1, &mesh->EBO);
 
-    glBindVertexArray(mesh.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices * sizeof(Vertex),
-                 mesh.vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_indices * \
+    glBindVertexArray(mesh->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+    glBufferData(GL_ARRAY_BUFFER, mesh->num_vertices * sizeof(Vertex),
+                 mesh->vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->num_indices * \
                  sizeof(unsigned int),
-                 mesh.indices, GL_STATIC_DRAW);
+                 mesh->indices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -88,24 +94,26 @@ model_error_t draw_model(Shader * shader, Model model)
 
 model_error_t load_model(Model model)
 {
-    /* Filthy, unclean c++. Begone, TCPPOT. */
+    /* model is expected to come with a valid file_path value */
+    model_error_t result = MODEL_SUCCESS;
     int count = 0;
-    const struct aiScene * scene = aiImportFile(model.file_path,
-                                                aiProcess_Triangulate | \
-                                                aiProcess_FlipUVs | \
-                                                aiProcess_GenNormals);
-    if (model.meshes){
-        /* This guarantees model.meshes == NULL */
+    const struct aiScene * scene;
+
+    if (model.meshes || model.loaded_textures){
+        /* This guarantees model.meshes == NULL and 
+         * model.loaded_textures == NULL
+         */
         fprintf(stderr, "This model already contains data.\n");
         return MODEL_UNEXP_ALLOC;
     }
+    scene = aiImportFile(model.file_path, aiProcess_Triangulate | \
+                         aiProcess_FlipUVs | aiProcess_GenNormals);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {
         fprintf(stderr, "Some kind of assimp error.\n");
         return MODEL_ASSIMP_ERR;
     }
-    printf("Made it to dirname\n");
     /* dirname may alter the passed file path...and it can segfault
      * if you try to alter a string literal (aka, something defined
      * by "this syyntax". To avoid this always initialized model path
@@ -114,10 +122,10 @@ model_error_t load_model(Model model)
      * model.file_path = file;
      */
     model.directory = dirname(model.file_path);
-    printf("about to malloc\n");
     model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
-    process_node(model, scene->mRootNode, scene, 0);
-    return MODEL_SUCCESS;
+    model.num_meshes = scene->mNumMeshes;
+    result = process_node(model, scene->mRootNode, scene, 0);
+    return result;
 }
 
 
@@ -131,13 +139,20 @@ model_error_t process_node(Model model, struct aiNode * node,
     for (int i = 0; i < node->mNumMeshes; i++){
         /* If loading succeeded this pointer should be valid. */
         ai_mesh = scene->mMeshes[node->mMeshes[i]];
-        process_mesh(ai_mesh, scene, model.directory, &mesh);
+        result = process_mesh(ai_mesh, scene, model.directory, &mesh, &model);
+        if (result){
+            /* Note: If an error occurred the contents of mesh are garbage. */
+            fprintf(stderr, "%s %d: Process_mesh failure during %s. \
+                    Model data incomplete.\n", __FILE__, __LINE__, __func__);
+            return result;
+        }
         model.meshes[index++] = mesh;
     }
     for (int i = 0; i < node->mNumChildren; i++){
+        printf("Processing child %i\n", i);
         result = process_node(model, node->mChildren[i], scene, index);
-        if (!result){
-            break;
+        if (result){
+            return result;
         }
     }
     return result;
@@ -145,7 +160,7 @@ model_error_t process_node(Model model, struct aiNode * node,
 
 
 model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
-                           char * directory, Mesh * out)
+                           char * directory, Mesh * out, Model * model)
 {
     Vertex vertex;
     int num_indices = 0;
@@ -161,11 +176,10 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
     out->vertices = (Vertex *)malloc(mesh->mNumVertices * sizeof(Vertex));
     if (!out->vertices){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
-        free(out);
-        out = NULL;
         return MODEL_NO_MEM;
     }
-   for (int i = 0; i < mesh->mNumVertices; i++){
+    out->num_vertices = mesh->mNumVertices;
+    for (int i = 0; i < mesh->mNumVertices; i++){
         vertex.position[0] = mesh->mVertices[i].x;
         vertex.position[1] = mesh->mVertices[i].y;
         vertex.position[2] = mesh->mVertices[i].z;
@@ -184,20 +198,20 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         }
         out->vertices[i] = vertex;
     }
+
+    /* Index processing */
     for (int i = 0; i < mesh->mNumFaces; i++){
         face = mesh->mFaces[i];
         num_indices += face.mNumIndices;
     }
-
-    /* Index processing */
     out->indices = (unsigned int *)malloc(num_indices * sizeof(unsigned int));
     if (!out->indices){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         free(out->vertices);
-        free(out);
-        out = NULL;
+        out->vertices = NULL;
         return MODEL_NO_MEM;
     }
+    out->num_indices = num_indices;
     for (int i = 0; i < mesh->mNumFaces; i++){
         face = mesh->mFaces[i];
         for (int j = 0; j < face.mNumIndices; j++){
@@ -210,29 +224,32 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         material = scene->mMaterials[mesh->mMaterialIndex];
         diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE,
                                               DIFFUSE, &num_diffuse_textures,
-                                              directory);
+                                              directory, model);
         specular_maps = load_material_textures(material,
                                                aiTextureType_SPECULAR,
                                                SPECULAR,
                                                &num_specular_textures,
-                                               directory);
+                                               directory, model);
         out->textures = (Texture *)malloc((num_diffuse_textures + \
                                            num_specular_textures) * \
                                            sizeof(Texture));
         if (!out->textures || !diffuse_maps || !specular_maps){
             fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
             free(out->vertices);
+            out->vertices = NULL;
             free(out->indices);
-            if (out->textures)
+            out->vertices = NULL;
+            if (out->textures){
                 free(out->textures);
+                out->textures = NULL;
+            }
             if (diffuse_maps)
                 free(diffuse_maps);
             if (specular_maps)
                 free(specular_maps);
-            free(out);
-            out = NULL;
             return MODEL_ERR;
         }
+        out->num_textures = num_diffuse_textures + num_specular_textures;
         for (int i = 0; i < num_diffuse_textures; i++){
             out->textures[i] = diffuse_maps[i];
         }
@@ -243,6 +260,17 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         free(specular_maps);
     }
 
+    /* gl storage allocation */
+    if (setup_mesh(out)){
+        free(out->vertices);
+        out->vertices = NULL;
+        free(out->indices);
+        out->vertices = NULL;
+        free(out->textures);
+        out->vertices = NULL;
+        return MODEL_GL_ERR;
+    }
+
     return MODEL_SUCCESS;
 }
 
@@ -250,13 +278,20 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
 Texture * load_material_textures(struct aiMaterial * mat,
                                  enum aiTextureType type,
                                  texture_t type_name, int * count,
-                                 char * directory)
+                                 char * directory, Model * model)
 {
     /* Store the number of textures found in count. */
     struct aiString string;
     Texture * textures = NULL;
     unsigned int texture_id;
     Texture texture;
+    Texture_Node * node;
+    const int max_file_name = 256;
+    char file_name[max_file_name];
+    char compare_name[max_file_name];
+    int load_texture;
+    Texture_Node * new_node = NULL;
+    int string_length;
 
     if (!aiGetMaterialTextureCount(mat, type)){
         fprintf(stderr, "%s %d: %s: Material has no textures!\n", __FILE__,
@@ -271,34 +306,55 @@ Texture * load_material_textures(struct aiMaterial * mat,
     }
     for (unsigned int i = 0; i < aiGetMaterialTextureCount(mat, type); i++){
         /* arg i to aiGetMaterialTexture needs to be a uint */
+        load_texture = 1;
         aiGetMaterialTexture(mat, type, i, &string, NULL, NULL, NULL, NULL,
                              NULL, NULL);
-        if (texture_from_file(string.data, directory,
-                              &texture_id)){
-            free(textures);
-            fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
-                    __LINE__);
+        string_length = snprintf(file_name, max_file_name, "%s/%s", directory,
+                                 string.data);
+        if (string_length >= max_file_name || string_length < 0){
+            fprintf(stderr, "snprintf error.\n");
             return NULL;
+        }
+        printf("Loading texture: %s\n", file_name);
+        for (node = model->loaded_textures; node; node = node->next){
+            printf("file_name: %s\ntexture path: %s\n", file_name,
+                   (node->texture).path);
+            if (!strcmp(file_name, (node->texture).path)){
+                printf("Texture already present.\n");
+                texture_id = (node->texture).id;
+                load_texture = 0;
+                break;
+            }
+        }
+        if (load_texture){
+            if (texture_from_file(file_name, &texture_id)){
+                free(textures);
+                fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
+                        __LINE__);
+                return NULL;
+            }
         }
         texture.id = texture_id;
         texture.type = type_name;
-        texture.path = string.data;
+        texture.path = file_name;
         textures[i] = texture;
+        if (load_texture){
+            new_node = malloc(sizeof(Texture_Node));
+            new_node->texture = texture;
+            new_node->next = NULL;
+            append_texture_node(model, new_node);
+        }
     }
     return textures;
 }
 
 
-model_error_t texture_from_file(char * file_name, char * directory,
-                                unsigned int * texture_id){
+model_error_t texture_from_file(char * file_name, unsigned int * texture_id)
+{
     int width, height, nrChannels;
-    const int max_file_name = 256;
-    char full_name[max_file_name];
     GLenum format;
 
-    snprintf(full_name, max_file_name, "%s/%s", directory, file_name);
-    printf("Texture full path:\n%s\n", full_name);
-    unsigned char * data = stbi_load(full_name, &width, &height,
+    unsigned char * data = stbi_load(file_name, &width, &height,
                                      &nrChannels, 0);
     if (data){
         switch(nrChannels){
@@ -334,4 +390,57 @@ model_error_t texture_from_file(char * file_name, char * directory,
                 __LINE__);
         return MODEL_STB_ERR;
     }
+}
+
+
+void free_mesh(Mesh * mesh)
+{
+    if (mesh->vertices){
+        free(mesh->vertices);
+        mesh->vertices = NULL;
+    }
+    if (mesh->indices){
+        free(mesh->indices);
+        mesh->indices = NULL;
+    }
+    if (mesh->textures){
+        free(mesh->textures);
+        mesh->textures = NULL;
+    }
+    /* Because of these calls, it is only safe to use mesh_free on a mesh
+     * that has successfully passed through process_mesh.
+     */
+    glDeleteBuffers(1, &mesh->VBO);
+    glDeleteBuffers(1, &mesh->EBO);
+    glDeleteVertexArrays(1, &mesh->VAO);
+}
+
+
+void free_model(Model * model)
+{
+    /* As with free_mesh, this is only safe to use on models which
+     * have survived load_model in its entirety.
+     */
+    for (int i = 0; i < model->num_meshes; i++){
+        free_mesh(&(model->meshes[i]));
+    }
+    free(model->meshes);
+}
+
+
+void append_texture_node(Model * model, Texture_Node * new_node)
+{
+    Texture_Node * current_node;
+
+    /* Just to be safe. */
+    new_node->next = NULL;
+    if (!model->loaded_textures){
+        model->loaded_textures = new_node;
+        return;
+    }
+    current_node = model->loaded_textures;
+    while (current_node->next){
+        current_node = current_node->next;
+    }
+    current_node->next = new_node;
 }

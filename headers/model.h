@@ -43,6 +43,12 @@
     };
     typedef struct Texture Texture;
 
+    typedef struct Texture_Node Texture_Node;
+    struct Texture_Node {
+        Texture texture;
+        Texture_Node * next;
+    };
+
     struct Mesh {
         Vertex *       vertices;
         unsigned int   num_vertices;
@@ -57,14 +63,15 @@
     typedef struct Mesh Mesh;
 
     struct Model {
-        char *       file_path;
-        Mesh *       meshes;
-        unsigned int num_meshes;
-        char *       directory;
+        char *         file_path;
+        Mesh *         meshes;
+        unsigned int   num_meshes;
+        char *         directory;
+        Texture_Node * loaded_textures;
     };
     typedef struct Model Model;
 
-    model_error_t setup_mesh(Mesh mesh);
+    model_error_t setup_mesh(Mesh * mesh);
     model_error_t draw_mesh(Shader * shader, Mesh mesh);
     model_error_t draw_model(Shader * shader, Model model);
     model_error_t load_model(Model model);
@@ -72,11 +79,13 @@
                                const struct aiScene * scene, int index);
     model_error_t process_mesh(struct aiMesh * mesh,
                                const struct aiScene * scene,
-                               char * directory, Mesh * out);
+                               char * directory, Mesh * out, Model * model);
     Texture * load_material_textures(struct aiMaterial * material,
                                      enum aiTextureType type,
                                      texture_t type_name, int * count,
-                                     char * directory);
-    model_error_t texture_from_file(char * fname, char * directory,
-                                    unsigned int * texture_id);
+                                     char * directory, Model * model);
+    model_error_t texture_from_file(char * fname, unsigned int * texture_id);
+    void free_mesh(Mesh * mesh);
+    void free_model(Model * model);
+    void append_texture_node(Model * model, Texture_Node * new_node);
 #endif

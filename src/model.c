@@ -90,11 +90,10 @@ model_error_t load_model(Model model)
 {
     /* Filthy, unclean c++. Begone, TCPPOT. */
     int count = 0;
-    Assimp::Importer import;
-    const aiScene * scene = import.ReadFile(model.file_path,
-                                            aiProcess_Triangulate | \
-                                            aiProcess_FlipUVs | \
-                                            aiProcess_GenNormals);
+    const struct aiScene * scene = aiImportFile(model.file_path,
+                                                aiProcess_Triangulate | \
+                                                aiProcess_FlipUVs | \
+                                                aiProcess_GenNormals);
     if (model.meshes){
         /* This guarantees model.meshes == NULL */
         fprintf(stderr, "This model already contains data.\n");
@@ -103,7 +102,7 @@ model_error_t load_model(Model model)
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {
-        fprintf(stderr, "Assimp error: %s\n", import.GetErrorString());
+        fprintf(stderr, "Some kind of assimp error.\n");
         return MODEL_ASSIMP_ERR;
     }
     model.directory = dirname(model.file_path);
@@ -114,12 +113,12 @@ model_error_t load_model(Model model)
 }
 
 
-model_error_t process_node(Model model, aiNode * node, const aiScene * scene,
-                           int index)
+model_error_t process_node(Model model, struct aiNode * node,
+                           const struct aiScene * scene, int index)
 {
     model_error_t result = MODEL_SUCCESS;
     Mesh mesh;
-    aiMesh * ai_mesh = NULL;
+    struct aiMesh * ai_mesh = NULL;
 
     for (int i = 0; i < node->mNumMeshes; i++){
         /* If loading succeeded this pointer should be valid. */
@@ -137,14 +136,14 @@ model_error_t process_node(Model model, aiNode * node, const aiScene * scene,
 }
 
 
-model_error_t process_mesh(aiMesh * mesh, const aiScene * scene,
+model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
                            char * directory, Mesh * out)
 {
     Vertex vertex;
     int num_indices = 0;
-    aiFace face;
+    struct aiFace face;
     int count = 0;
-    aiMaterial * material;
+    struct aiMaterial * material;
     Texture * diffuse_maps = NULL;
     Texture * specular_maps = NULL;
     int num_diffuse_textures = 0;
@@ -240,29 +239,33 @@ model_error_t process_mesh(aiMesh * mesh, const aiScene * scene,
 }
 
 
-Texture * load_material_textures(aiMaterial * mat, aiTextureType type,
+Texture * load_material_textures(struct aiMaterial * mat,
+                                 enum aiTextureType type,
                                  texture_t type_name, int * count,
                                  char * directory)
 {
     /* Store the number of textures found in count. */
-    aiString string;
+    struct aiString string;
     Texture * textures = NULL;
     unsigned int texture_id;
     Texture texture;
 
-    if (!mat->GetTextureCount(type)){
+    if (!aiGetMaterialTextureCount(mat, type)){
         fprintf(stderr, "%s %d: %s: Material has no textures!\n", __FILE__,
                 __LINE__, __func__);
         return NULL;
     }
-    textures = (Texture *)malloc(mat->GetTextureCount(type) * sizeof(Texture));
+    textures = (Texture *)malloc(aiGetMaterialTextureCount(mat, type) * \
+                                 sizeof(Texture));
     if (!textures){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         return NULL;
     }
-    for (int i = 0; i < mat->GetTextureCount(type); i++){
-        mat->GetTexture(type, i, &string);
-        if (!texture_from_file((char *)string.C_Str(), directory,
+    for (unsigned int i = 0; i < aiGetMaterialTextureCount(mat, type); i++){
+        /* arg i to aiGetMaterialTexture needs to be a uint */
+        aiGetMaterialTexture(mat, type, i, &string, NULL, NULL, NULL, NULL,
+                             NULL, NULL);
+        if (!texture_from_file(string.data, directory,
                                &texture_id)){
             free(textures);
             fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
@@ -271,7 +274,7 @@ Texture * load_material_textures(aiMaterial * mat, aiTextureType type,
         }
         texture.id = texture_id;
         texture.type = type_name;
-        texture.path = (char *)string.C_Str();
+        texture.path = string.data;
         textures[i] = texture;
     }
     return textures;

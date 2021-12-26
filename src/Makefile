@@ -1,6 +1,6 @@
 GREEN = \033[0;32m
 NC = \033[0m
-CC = g++
+CC = gcc
 headers = ../headers
 libs = ../lib
 solibs = ../lib/libshader.so ../lib/libcamera.so ../lib/libmodel.so

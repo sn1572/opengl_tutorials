@@ -6,9 +6,10 @@
     #include <shader.h>
     #include <GLFW/glfw3.h>
     #include <stddef.h>
+    #include <assimp/cimport.h>
     #include <assimp/scene.h>
     #include <assimp/postprocess.h>
-    #include <assimp/Importer.hpp>
+    #include <assimp/material.h>
     #include <libgen.h>
     #define STB_IMAGE_IMPLEMENTATION
     #include <stb_image.h>
@@ -67,11 +68,13 @@
     model_error_t draw_mesh(Shader * shader, Mesh mesh);
     model_error_t draw_model(Shader * shader, Model model);
     model_error_t load_model(Model model);
-    model_error_t process_node(Model model, aiNode * node,
-                               const aiScene * scene, int index);
-    model_error_t process_mesh(aiMesh * mesh, const aiScene * scene,
+    model_error_t process_node(Model model, struct aiNode * node,
+                               const struct aiScene * scene, int index);
+    model_error_t process_mesh(struct aiMesh * mesh,
+                               const struct aiScene * scene,
                                char * directory, Mesh * out);
-    Texture * load_material_textures(aiMaterial * material, aiTextureType type,
+    Texture * load_material_textures(struct aiMaterial * material,
+                                     enum aiTextureType type,
                                      texture_t type_name, int * count,
                                      char * directory);
     model_error_t texture_from_file(char * fname, char * directory,

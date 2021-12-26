@@ -105,9 +105,17 @@ model_error_t load_model(Model model)
         fprintf(stderr, "Some kind of assimp error.\n");
         return MODEL_ASSIMP_ERR;
     }
+    printf("Made it to dirname\n");
+    /* dirname may alter the passed file path...and it can segfault
+     * if you try to alter a string literal (aka, something defined
+     * by "this syyntax". To avoid this always initialized model path
+     * like so:
+     * char file[] = "some/path";
+     * model.file_path = file;
+     */
     model.directory = dirname(model.file_path);
-    /* We have to explicitly cast because of g++. Hooray. */
-    model.meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
+    printf("about to malloc\n");
+    model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
     process_node(model, scene->mRootNode, scene, 0);
     return MODEL_SUCCESS;
 }
@@ -157,7 +165,7 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         out = NULL;
         return MODEL_NO_MEM;
     }
-    for (int i = 0; i < mesh->mNumVertices; i++){
+   for (int i = 0; i < mesh->mNumVertices; i++){
         vertex.position[0] = mesh->mVertices[i].x;
         vertex.position[1] = mesh->mVertices[i].y;
         vertex.position[2] = mesh->mVertices[i].z;

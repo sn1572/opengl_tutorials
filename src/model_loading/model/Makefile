@@ -1,8 +1,8 @@
-CC = g++
+CC = gcc
 headers = ../../../headers
 lib_dir = ../../../lib
 libs = ../../../lib/libshader.so ../../../lib/libcamera.so ../../../lib/libmodel.so
-lib_srcs = ../../shader.c ../../camera.c
+lib_srcs = ../../shader.c ../../camera.c ../../model.c
 binaries = main
 glad_install_dir = /opt/glad
 assimp_include_dir = /home/markbolding/Documents/assimp-5.0.1/include

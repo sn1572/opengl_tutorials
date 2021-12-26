@@ -66,6 +66,20 @@ int main(){
     mat4x4 model;
     mat4x4 normal_matrix;
     float past, time;
+    char model_path[] = "./models/backpack/backpack.obj";
+
+    Model backpack;
+    backpack.file_path = model_path;
+    backpack.meshes = NULL;
+    backpack.directory = NULL;
+    backpack.num_meshes = 0;
+    if (!load_model(backpack)){
+        fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
+                __LINE__);
+        goto end;
+    }
+    printf("Loaded backpack model, as far as I can tell.\n");
+    goto cleanup_glfw;
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -103,19 +117,6 @@ int main(){
     glfwSetCursorPosCallback(window, glfwCompatMouseMovementCallback);
     glfwSetScrollCallback(window, glfwCompatMouseScrollCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    Model backpack;
-    backpack.file_path = (char *)"models/backpack/backpack.obj";
-    backpack.meshes = NULL;
-    backpack.directory = NULL;
-    backpack.num_meshes = 0;
-    if (!load_model(backpack)){
-        fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
-                __LINE__);
-        goto cleanup_glfw;
-    }
-    printf("Loaded backpack model, as far as I can tell.\n");
-    goto cleanup_glfw;
 
     past = (float)glfwGetTime();
 

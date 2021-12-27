@@ -151,7 +151,6 @@ model_error_t process_node(Model * model, struct aiNode * node,
         model->meshes[index++] = mesh;
     }
     for (int i = 0; i < node->mNumChildren; i++){
-        printf("Processing child %i\n", i);
         result = process_node(model, node->mChildren[i], scene, index);
         if (result){
             return result;
@@ -316,13 +315,8 @@ Texture * load_material_textures(struct aiMaterial * mat,
             fprintf(stderr, "snprintf error.\n");
             return NULL;
         }
-        printf("Loading texture: %s\n", file_name);
-        printf("model root node: %zu\n", model->loaded_textures);
         for (node = model->loaded_textures; node; node = node->next){
-            printf("file_name: %s\ntexture path: %s\n", file_name,
-                   (node->texture).path);
             if (!strcmp(file_name, (node->texture).path)){
-                printf("Texture already present.\n");
                 texture_id = (node->texture).id;
                 load_texture = 0;
                 break;

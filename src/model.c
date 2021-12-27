@@ -72,13 +72,18 @@ model_error_t draw_mesh(Shader * shader, Mesh mesh)
 
     for (unsigned int i=0; i < mesh.num_textures; i++){
         glActiveTexture(GL_TEXTURE0 + i);
-        if (mesh.textures[i].type == DIFFUSE){
-            snprintf(name, max_unif_name, "material.texture_diffuse%i",
-                     diffuse_count++);
-        } else if (mesh.textures[i].type == SPECULAR){
-            snprintf(name, max_unif_name, "material.texture_specular%i",
-                     specular_count++);
-        }
+        switch(mesh.textures[i].type){
+            case DIFFUSE:
+                snprintf(name, max_unif_name, "material.texture_diffuse%i",
+                         diffuse_count++);
+                break;
+            case SPECULAR:
+                snprintf(name, max_unif_name, "material.texture_specular%i",
+                         specular_count++);
+                break;
+            default:
+                fprintf(stderr, "%s %d: Texture type unrecognized: %i\n",
+                        __FILE__, __LINE__, mesh.textures[i].type);
         setInt(shader, name, i);
         glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id);
     }

@@ -111,7 +111,6 @@ int main(){
      * figured that out.
      */
     setup_model(&backpack);
-    goto cleanup_glfw;
 
     // Init the camera `object` and hook its methods into the callbacks
     struct Camera * cam;

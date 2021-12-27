@@ -63,7 +63,7 @@ void sendMatrixToShader(mat4x4 matrix, const char * name,
 }
 
 
-static void setViewMatrix(struct Camera * self, struct Shader * shaders,
+void setViewMatrix(struct Camera * self, struct Shader * shaders,
                           const char * handle){
     vec3 temp;
     mat4x4 view;
@@ -77,7 +77,7 @@ static void setViewMatrix(struct Camera * self, struct Shader * shaders,
 }
 
 
-static void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
+void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
                                 const char * handle){
     mat4x4 projection;
     mat4x4_perspective(projection,
@@ -89,7 +89,7 @@ static void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
 }
 
 
-static void processKeyboard(struct Camera * self, GLFWwindow * window){
+void processKeyboard(struct Camera * self, GLFWwindow * window){
                             float deltaTime, currentTime;
 
     currentTime = glfwGetTime();
@@ -126,7 +126,7 @@ static void processKeyboard(struct Camera * self, GLFWwindow * window){
 }
 
 
-static void processMouseMovement(struct Camera * self, GLFWwindow * window,
+void processMouseMovement(struct Camera * self, GLFWwindow * window,
                                  double xPos, double yPos){
     if (self->firstMouse){
         self->lastMouseX = xPos;
@@ -156,7 +156,7 @@ static void processMouseMovement(struct Camera * self, GLFWwindow * window,
 }
 
 
-static void processMouseScroll(struct Camera * self, GLFWwindow * window,
+void processMouseScroll(struct Camera * self, GLFWwindow * window,
                                double yoffset){
     float zoom = self->zoom;
     zoom -= yoffset;

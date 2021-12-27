@@ -15,8 +15,8 @@
 #define FAILURE 1;
 
 
-static char cube_frag_source[] = "shaders/cube_frag";
-static char cube_vert_source[] = "shaders/cube_vert";
+static char model_frag_source[] = "shaders/model_frag";
+static char model_vert_source[] = "shaders/model_vert";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
 static int WIDTH = 1920;
@@ -38,20 +38,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
 }
 
 
-float cubePositions[] = {
-    0.0f,  0.0f,  0.0f, 
-    2.0f,  5.0f, -15.0f, 
-    -1.5f, -2.2f, -2.5f,  
-    -3.8f, -2.0f, -12.3f,  
-    2.4f, -0.4f, -3.5f,  
-    -1.7f,  3.0f, -7.5f,
-    1.3f, -2.0f, -2.5f,  
-    1.5f,  2.0f, -2.5f, 
-    1.5f,  0.2f, -1.5f, 
-    -1.3f,  1.0f, -1.5f
-};
-
-
 vec3 light_positions[] = {
     {0.7f, 0.2f, 2.0f},
     {2.3f, -3.3f, -4.0f},
@@ -63,25 +49,29 @@ vec3 light_positions[] = {
 int main(){
     int status = SUCCESS;
     int numFrames = 0;
-    mat4x4 model;
+    mat4x4 model_matrix;
     mat4x4 normal_matrix;
     float past, time;
     char model_path[] = "./models/backpack/backpack.obj";
 
+    /* glfw init and context creation */
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    //glfw window creation and context initialization
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpengl", NULL,
                                           NULL);
     if (window == NULL){
-        fprintf(stderr, "Failed to create a GLFW window\n");
+        fprintf(stderr, "Failed to create a GLFW window.\n");
         status = FAILURE;
         goto cleanup_glfw;
     }
     glfwMakeContextCurrent(window);
+    /* user input callbacks */
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, glfwCompatMouseMovementCallback);
+    glfwSetScrollCallback(window, glfwCompatMouseScrollCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     //initialize GLAD loader
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
@@ -93,24 +83,38 @@ int main(){
     // set default window size
     glViewport(0, 0, WIDTH, HEIGHT);
 
+    /* model loading
+     * Eventually this will need to have its own thread to prevent
+     * application non-responsiveness.
+     */
     Model backpack;
     backpack.file_path = model_path;
     backpack.meshes = NULL;
     backpack.directory = NULL;
     backpack.num_meshes = 0;
     backpack.loaded_textures = NULL;
-    if (load_model(&backpack) != MODEL_SUCCESS){
+    if (load_model(&backpack)){
         fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
                 __LINE__);
         goto end;
     } else{
         printf("Backpack loaded successfully (as far as I can tell).\n");
     }
-    /* Separating the GL allocation from the CPU loading. Doing this
-     * so that hopefully GL error handling can be implemented when I've
-     * figured that out.
-     */
     setup_model(&backpack);
+
+    /* Shader init */
+    struct Shader * light_shader = shaderInit();
+    if (light_shader->load(light_shader, light_vert_source,
+                           light_frag_source) != SHADER_NO_ERR){
+        fprintf(stderr, "light shader compilation error\n");
+        goto cleanup_gl;
+    }
+    struct Shader * model_shader = shaderInit();
+    if (load(model_shader, model_vert_source,
+             model_frag_source) != SHADER_NO_ERR){
+        fprintf(stderr, "model shader compilation error\n");
+        goto cleanup_gl;
+    }
 
     // Init the camera `object` and hook its methods into the callbacks
     struct Camera * cam;
@@ -118,12 +122,9 @@ int main(){
     setActiveCamera(cam);
     setActiveCameraPosition(0, 0, 3);
 
-    // frame buffer size callback
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, glfwCompatMouseMovementCallback);
-    glfwSetScrollCallback(window, glfwCompatMouseScrollCallback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    /* callback assignment former location */
 
+    /* main loop */
     past = (float)glfwGetTime();
 
     while (!glfwWindowShouldClose(window)){
@@ -132,23 +133,29 @@ int main(){
 
         glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Can this be moved outside the main loop?
         glfwCompatKeyboardCallback(window);
 
-        /*
-        cam->setViewMatrix(cam, cube_shaders, "view");
-        cam->setProjectionMatrix(cam, cube_shaders, "projection");
-        */
+        use(model_shader);
+        setViewMatrix(cam, model_shader, "view");
+        setProjectionMatrix(cam, model_shader, "projection");
+        mat4x4_identity(model_matrix);
+        //mat4x4_normal_matrix(normal_matrix, model_matrix);
+        mat4x4_identity(normal_matrix);
+        sendMatrixToShader(model_matrix, "model_matrix", model_shader);
+        sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
+
+        draw_model(model_shader, backpack);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
     time = (float)glfwGetTime();
     printf("Rendered %i frames in %1.10f seconds amounting to %f FPS.\n",
            numFrames, time, numFrames/time);
 
-    //cleanup_gl:
-        //free_model(backpack);
+    cleanup_gl:
+        free_model(&backpack);
     cleanup_glfw:
         glfwTerminate();
     end:

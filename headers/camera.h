@@ -46,7 +46,8 @@
         }
     }
 
-    #define camErrorHandler(err) (cameraErrorInterpreter(err, __FILE__, __LINE__))
+    #define camErrorHandler(err) (cameraErrorInterpreter(err, __FILE__, \
+                                                         __LINE__))
 
 
     // Default camera values
@@ -116,16 +117,16 @@
                             struct Shader * shaders);
 
     // Camera struct functions
-    static void setViewMatrix(struct Camera * self, struct Shader * shaders,
-                              const char * handle);
-    static void setProjectionMatrix(struct Camera * self,
-                                    struct Shader * shaders,
-                                    const char * handle);
-    static void processKeyboard(struct Camera * self, GLFWwindow * window);
-    static void processMouseMovement(struct Camera * self, GLFWwindow * window,
-                                     double xoffset, double yoffset);
-    static void processMouseScroll(struct Camera * self, GLFWwindow * window,
-                                   double yoffset);
+    void setViewMatrix(struct Camera * self, struct Shader * shaders,
+                       const char * handle);
+    void setProjectionMatrix(struct Camera * self,
+                             struct Shader * shaders,
+                             const char * handle);
+    void processKeyboard(struct Camera * self, GLFWwindow * window);
+    void processMouseMovement(struct Camera * self, GLFWwindow * window,
+                              double xoffset, double yoffset);
+    void processMouseScroll(struct Camera * self, GLFWwindow * window,
+                            double yoffset);
 
     // Module local functions
     static void updateCameraVectors(struct Camera * self);

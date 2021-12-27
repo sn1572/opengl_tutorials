@@ -84,6 +84,8 @@ model_error_t draw_mesh(Shader * shader, Mesh mesh)
             default:
                 fprintf(stderr, "%s %d: Texture type unrecognized: %i\n",
                         __FILE__, __LINE__, mesh.textures[i].type);
+                return MODEL_ERR;
+        }
         setInt(shader, name, i);
         glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id);
     }
@@ -126,8 +128,9 @@ model_error_t load_model(Model * model)
                 model->loaded_textures is NULL.\n");
         return MODEL_UNEXP_ALLOC;
     }
+    /* aiProcess_GenNormals */
     scene = aiImportFile(model->file_path, aiProcess_Triangulate | \
-                         aiProcess_FlipUVs | aiProcess_GenNormals);
+                         aiProcess_FlipUVs);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {
@@ -224,7 +227,7 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         face = mesh->mFaces[i];
         num_indices += face.mNumIndices;
     }
-    out->indices = (unsigned int *)malloc(num_indices * sizeof(unsigned int));
+    out->indices = malloc(num_indices * sizeof(unsigned int));
     if (!out->indices){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         free(out->vertices);

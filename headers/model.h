@@ -79,11 +79,11 @@
                                const struct aiScene * scene, int index);
     model_error_t process_mesh(struct aiMesh * mesh,
                                const struct aiScene * scene,
-                               char * directory, Mesh * out, Model * model);
+                               Mesh * out, Model * model);
     Texture * load_material_textures(struct aiMaterial * material,
                                      enum aiTextureType type,
                                      texture_t type_name, int * count,
-                                     char * directory, Model * model);
+                                     Model * model);
     model_error_t texture_from_file(char * fname, unsigned int * texture_id);
     void free_mesh(Mesh * mesh);
     void free_model(Model * model);

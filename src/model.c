@@ -124,6 +124,7 @@ model_error_t load_model(Model model)
     model.directory = dirname(model.file_path);
     model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
     model.num_meshes = scene->mNumMeshes;
+    model.loaded_textures = NULL;
     result = process_node(model, scene->mRootNode, scene, 0);
     return result;
 }
@@ -139,7 +140,7 @@ model_error_t process_node(Model model, struct aiNode * node,
     for (int i = 0; i < node->mNumMeshes; i++){
         /* If loading succeeded this pointer should be valid. */
         ai_mesh = scene->mMeshes[node->mMeshes[i]];
-        result = process_mesh(ai_mesh, scene, model.directory, &mesh, &model);
+        result = process_mesh(ai_mesh, scene, &mesh, &model);
         if (result){
             /* Note: If an error occurred the contents of mesh are garbage. */
             fprintf(stderr, "%s %d: Process_mesh failure during %s. \
@@ -160,7 +161,7 @@ model_error_t process_node(Model model, struct aiNode * node,
 
 
 model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
-                           char * directory, Mesh * out, Model * model)
+                           Mesh * out, Model * model)
 {
     Vertex vertex;
     int num_indices = 0;
@@ -224,12 +225,12 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         material = scene->mMaterials[mesh->mMaterialIndex];
         diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE,
                                               DIFFUSE, &num_diffuse_textures,
-                                              directory, model);
+                                              model);
         specular_maps = load_material_textures(material,
                                                aiTextureType_SPECULAR,
                                                SPECULAR,
                                                &num_specular_textures,
-                                               directory, model);
+                                               model);
         out->textures = (Texture *)malloc((num_diffuse_textures + \
                                            num_specular_textures) * \
                                            sizeof(Texture));
@@ -278,7 +279,7 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
 Texture * load_material_textures(struct aiMaterial * mat,
                                  enum aiTextureType type,
                                  texture_t type_name, int * count,
-                                 char * directory, Model * model)
+                                 Model * model)
 {
     /* Store the number of textures found in count. */
     struct aiString string;
@@ -298,8 +299,7 @@ Texture * load_material_textures(struct aiMaterial * mat,
                 __LINE__, __func__);
         return NULL;
     }
-    textures = (Texture *)malloc(aiGetMaterialTextureCount(mat, type) * \
-                                 sizeof(Texture));
+    textures = malloc(aiGetMaterialTextureCount(mat, type) * sizeof(Texture));
     if (!textures){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         return NULL;
@@ -309,13 +309,14 @@ Texture * load_material_textures(struct aiMaterial * mat,
         load_texture = 1;
         aiGetMaterialTexture(mat, type, i, &string, NULL, NULL, NULL, NULL,
                              NULL, NULL);
-        string_length = snprintf(file_name, max_file_name, "%s/%s", directory,
-                                 string.data);
+        string_length = snprintf(file_name, max_file_name, "%s/%s",
+                                 model->directory, string.data);
         if (string_length >= max_file_name || string_length < 0){
             fprintf(stderr, "snprintf error.\n");
             return NULL;
         }
         printf("Loading texture: %s\n", file_name);
+        printf("model root node: %zu\n", model->loaded_textures);
         for (node = model->loaded_textures; node; node = node->next){
             printf("file_name: %s\ntexture path: %s\n", file_name,
                    (node->texture).path);

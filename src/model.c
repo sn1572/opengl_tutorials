@@ -92,21 +92,22 @@ model_error_t draw_model(Shader * shader, Model model)
 }
 
 
-model_error_t load_model(Model model)
+model_error_t load_model(Model * model)
 {
     /* model is expected to come with a valid file_path value */
     model_error_t result = MODEL_SUCCESS;
     int count = 0;
     const struct aiScene * scene;
 
-    if (model.meshes || model.loaded_textures){
+    if (model->meshes || model->loaded_textures){
         /* This guarantees model.meshes == NULL and 
          * model.loaded_textures == NULL
          */
-        fprintf(stderr, "This model already contains data.\n");
+        fprintf(stderr, "Ensure that model->meshes is NULL and \
+                model->loaded_textures is NULL.\n");
         return MODEL_UNEXP_ALLOC;
     }
-    scene = aiImportFile(model.file_path, aiProcess_Triangulate | \
+    scene = aiImportFile(model->file_path, aiProcess_Triangulate | \
                          aiProcess_FlipUVs | aiProcess_GenNormals);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
@@ -121,16 +122,16 @@ model_error_t load_model(Model model)
      * char file[] = "some/path";
      * model.file_path = file;
      */
-    model.directory = dirname(model.file_path);
-    model.meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
-    model.num_meshes = scene->mNumMeshes;
-    model.loaded_textures = NULL;
+    model->directory = dirname(model->file_path);
+    model->meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
+    model->num_meshes = scene->mNumMeshes;
+    model->loaded_textures = NULL;
     result = process_node(model, scene->mRootNode, scene, 0);
     return result;
 }
 
 
-model_error_t process_node(Model model, struct aiNode * node,
+model_error_t process_node(Model * model, struct aiNode * node,
                            const struct aiScene * scene, int index)
 {
     model_error_t result = MODEL_SUCCESS;
@@ -140,14 +141,14 @@ model_error_t process_node(Model model, struct aiNode * node,
     for (int i = 0; i < node->mNumMeshes; i++){
         /* If loading succeeded this pointer should be valid. */
         ai_mesh = scene->mMeshes[node->mMeshes[i]];
-        result = process_mesh(ai_mesh, scene, &mesh, &model);
+        result = process_mesh(ai_mesh, scene, &mesh, model);
         if (result){
             /* Note: If an error occurred the contents of mesh are garbage. */
             fprintf(stderr, "%s %d: Process_mesh failure during %s. \
                     Model data incomplete.\n", __FILE__, __LINE__, __func__);
             return result;
         }
-        model.meshes[index++] = mesh;
+        model->meshes[index++] = mesh;
     }
     for (int i = 0; i < node->mNumChildren; i++){
         printf("Processing child %i\n", i);

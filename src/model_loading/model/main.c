@@ -106,6 +106,11 @@ int main(){
     } else{
         printf("Backpack loaded successfully (as far as I can tell).\n");
     }
+    /* Separating the GL allocation from the CPU loading. Doing this
+     * so that hopefully GL error handling can be implemented when I've
+     * figured that out.
+     */
+    setup_model(&backpack);
     goto cleanup_glfw;
 
     // Init the camera `object` and hook its methods into the callbacks

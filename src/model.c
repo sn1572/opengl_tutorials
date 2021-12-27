@@ -1,6 +1,17 @@
 #include <model.h>
 
 
+model_error_t setup_model(Model * model)
+{
+    model_error_t result = MODEL_SUCCESS;
+
+    for (int i = 0; i < model->num_meshes; i++){
+        result = setup_mesh(model->meshes+i);
+    }
+    return result;
+}
+
+
 model_error_t setup_mesh(Mesh * mesh)
 {
     /* Currently there is no cleanup for the buffers and arrays
@@ -8,6 +19,9 @@ model_error_t setup_mesh(Mesh * mesh)
      * It is also not currently possible to tell if they've even
      * been allocated. As a result it is currently best to terminate
      * program execution if setup_mesh fails.
+     * One "Easy" way that may not be thread-safe is to call glGetError()
+     * at the top of this function and then after every gl* call.
+     * TODO: Fix this if possible or implement a gl error hook.
      */
     model_error_t result = MODEL_SUCCESS;
 
@@ -126,13 +140,13 @@ model_error_t load_model(Model * model)
     model->meshes = malloc(scene->mNumMeshes * sizeof(Mesh));
     model->num_meshes = scene->mNumMeshes;
     model->loaded_textures = NULL;
-    result = process_node(model, scene->mRootNode, scene, 0);
+    result = process_node(model, scene->mRootNode, scene, &count);
     return result;
 }
 
 
 model_error_t process_node(Model * model, struct aiNode * node,
-                           const struct aiScene * scene, int index)
+                           const struct aiScene * scene, int * index)
 {
     model_error_t result = MODEL_SUCCESS;
     Mesh mesh;
@@ -148,7 +162,7 @@ model_error_t process_node(Model * model, struct aiNode * node,
                     Model data incomplete.\n", __FILE__, __LINE__, __func__);
             return result;
         }
-        model->meshes[index++] = mesh;
+        model->meshes[(*index)++] = mesh;
     }
     for (int i = 0; i < node->mNumChildren; i++){
         result = process_node(model, node->mChildren[i], scene, index);
@@ -173,8 +187,8 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
     int num_diffuse_textures = 0;
     int num_specular_textures = 0;
 
-    /* Vertex processing. More eye-rolling over explicit casts for g++. */
-    out->vertices = (Vertex *)malloc(mesh->mNumVertices * sizeof(Vertex));
+    /* Vertex processing. */
+    out->vertices = malloc(mesh->mNumVertices * sizeof(Vertex));
     if (!out->vertices){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         return MODEL_NO_MEM;
@@ -231,9 +245,8 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
                                                SPECULAR,
                                                &num_specular_textures,
                                                model);
-        out->textures = (Texture *)malloc((num_diffuse_textures + \
-                                           num_specular_textures) * \
-                                           sizeof(Texture));
+        out->textures = malloc((num_diffuse_textures + \
+                                num_specular_textures) * sizeof(Texture));
         if (!out->textures || !diffuse_maps || !specular_maps){
             fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
             free(out->vertices);
@@ -259,17 +272,6 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         }
         free(diffuse_maps);
         free(specular_maps);
-    }
-
-    /* gl storage allocation */
-    if (setup_mesh(out)){
-        free(out->vertices);
-        out->vertices = NULL;
-        free(out->indices);
-        out->vertices = NULL;
-        free(out->textures);
-        out->vertices = NULL;
-        return MODEL_GL_ERR;
     }
 
     return MODEL_SUCCESS;
@@ -404,11 +406,14 @@ void free_mesh(Mesh * mesh)
         mesh->textures = NULL;
     }
     /* Because of these calls, it is only safe to use mesh_free on a mesh
-     * that has successfully passed through process_mesh.
+     * that has successfully passed through both process_mesh and setup_mesh.
      */
     glDeleteBuffers(1, &mesh->VBO);
     glDeleteBuffers(1, &mesh->EBO);
     glDeleteVertexArrays(1, &mesh->VAO);
+    for (int i = 0; i < mesh->num_textures; i++){
+        glDeleteTextures(1, &(mesh->textures[i].id));
+    }
 }
 
 

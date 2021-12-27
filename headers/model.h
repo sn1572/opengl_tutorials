@@ -71,12 +71,13 @@
     };
     typedef struct Model Model;
 
+    model_error_t setup_model(Model * model);
     model_error_t setup_mesh(Mesh * mesh);
     model_error_t draw_mesh(Shader * shader, Mesh mesh);
     model_error_t draw_model(Shader * shader, Model model);
     model_error_t load_model(Model * model);
     model_error_t process_node(Model * model, struct aiNode * node,
-                               const struct aiScene * scene, int index);
+                               const struct aiScene * scene, int * index);
     model_error_t process_mesh(struct aiMesh * mesh,
                                const struct aiScene * scene,
                                Mesh * out, Model * model);

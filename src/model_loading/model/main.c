@@ -38,14 +38,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
 }
 
 
-vec3 light_positions[] = {
-    {0.7f, 0.2f, 2.0f},
-    {2.3f, -3.3f, -4.0f},
-    {-4.0f, 2.0f, -12.0f},
-    {0.f, 0.f, -3.f}
-};
-
-
 int main(){
     int status = SUCCESS;
     int numFrames = 0;
@@ -85,7 +77,8 @@ int main(){
 
     /* model loading
      * Eventually this will need to have its own thread to prevent
-     * application non-responsiveness.
+     * application non-responsiveness. To do that we probably need to
+     * pull out the opengl calls.
      */
 
     Model backpack;
@@ -165,6 +158,19 @@ int main(){
         mat4x4_identity(normal_matrix);
         sendMatrixToShader(model_matrix, "model_matrix", model_shader);
         sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
+
+        /* apply point light effects */
+        vec3 point_ambient = {0.4f, 0.4f, 0.4f};
+        vec3 point_diffuse = {4.f, 4.f, 4.f};
+        vec3 point_specular = {8.f, 8.f, 8.f};
+        vec3 point_position = {-2.f, 0.f, 0.f};
+        setVec3(model_shader, "point_light.position", point_position);
+        setVec3(model_shader, "point_light.ambient", point_ambient);
+        setVec3(model_shader, "point_light.specular", point_specular);
+        setVec3(model_shader, "point_light.diffuse", point_diffuse);
+        setFloat(model_shader, "point_light.constant", 1.f);
+        setFloat(model_shader, "point_light.linear", 0.7f);
+        setFloat(model_shader, "point_light.quadratic", 1.8f);
 
         draw_model(model_shader, backpack);
 

@@ -43,7 +43,7 @@ struct PointLight {
 uniform Material material;
 uniform vec3 camera_position;
 uniform DirectionalLight directional_light;
-uniform PointLight point_lights[4];
+uniform PointLight point_light;
 uniform SpotLight spotlight;
 
 
@@ -131,19 +131,9 @@ void main(){
     vec3 normalized_normal = normalize(normal);
     vec3 view_direction = normalize(camera_position - fragment_position);
     vec3 total;
-    int i;
 
-    /*
-    total = calc_directional_light(directional_light, normalized_normal,
-                                   view_direction);
-    total += calc_spotlight(spotlight, normalized_normal,
-                            fragment_position, view_direction);
-    for (i=0; i<4; i++){
-        total += calc_point_light(point_lights[i], normalized_normal,
-                                  fragment_position, view_direction);
-    }
-    */
-    total = vec3(1.0);
+    total = calc_point_light(point_light, normalized_normal,
+                             fragment_position, view_direction);
 	frag_color = texture(material.texture_diffuse1, texture_coordinates) * \
                  vec4(total, 1.0);
 }

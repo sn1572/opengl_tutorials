@@ -261,8 +261,8 @@ int main(){
     cube_shaders->setVec3(cube_shaders, "light.diffuse", light_diffuse);
     cube_shaders->setVec3(cube_shaders, "light.specular", light_specular);
     cube_shaders->setFloat(cube_shaders, "light.constant", 1.f);
-    cube_shaders->setFloat(cube_shaders, "light.linear", 0.35f);
-    cube_shaders->setFloat(cube_shaders, "light.quadratic", 0.44f);
+    cube_shaders->setFloat(cube_shaders, "light.linear", 0.07f);
+    cube_shaders->setFloat(cube_shaders, "light.quadratic", 0.017f);
 
     light_shaders->use(light_shaders);
     light_shaders->setVec3(light_shaders, "light.ambient", light_specular);

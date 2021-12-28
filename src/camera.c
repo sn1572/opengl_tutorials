@@ -90,35 +90,42 @@ void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
 
 
 void processKeyboard(struct Camera * self, GLFWwindow * window){
-                            float deltaTime, currentTime;
+                     float deltaTime, currentTime;
 
     currentTime = glfwGetTime();
     deltaTime = currentTime-(self->lastUpdateTime);
     self->lastUpdateTime = currentTime;
 
     float velocity = (self->movementSpeed) * deltaTime;
-    vec3 position, front, right;
+    vec3 position, front, right, up;
     memcpy(position, *(self->position), vecSize);
     memcpy(front, *(self->front), vecSize);
     memcpy(right, *(self->right), vecSize);
+    memcpy(up, *self->up, vecSize);
     vec3_scale(front, front, velocity);
     vec3_scale(right, right, velocity);
+    vec3_scale(up, up, velocity);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, 1);
     }
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
         vec3_add(position, position, front);
+    }
+    else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        vec3_sub(position, position, front);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
         vec3_sub(position, position, right);
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-        vec3_sub(position, position, front);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+    else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
         vec3_add(position, position, right);
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+        vec3_add(position, position, up);
+    }
+    else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+        vec3_sub(position, position, up);
     }
 
     //self->position = &position;

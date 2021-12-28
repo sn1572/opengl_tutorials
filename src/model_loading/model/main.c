@@ -164,7 +164,6 @@ int main(){
         setViewMatrix(cam, model_shader, "view");
         setProjectionMatrix(cam, model_shader, "projection");
         mat4x4_identity(model_matrix);
-        //mat4x4_normal_matrix(normal_matrix, model_matrix);
         mat4x4_identity(normal_matrix);
         sendMatrixToShader(model_matrix, "model_matrix", model_shader);
         sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
@@ -173,8 +172,18 @@ int main(){
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};
         vec3 point_diffuse = {2.f, 2.f, 2.f};
         vec3 point_specular = {5.f, 5.f, 5.f};
-        vec3 point_position = {2.f, 2.f, 2.f};
-        setVec3(model_shader, "point_light.position", point_position);
+        vec4 light_initial_position = {3.f, 0.f, 0.f, 0.f};
+        vec4 light_position_4;
+        vec3 light_position;
+        mat4x4 R;
+        mat4x4_identity(R);
+        float angle = time*50*M_PI/180;
+        mat4x4_rotate(R, R, 0.f, 1.f, 0.f, angle);
+        mat4x4_mul_vec4(light_position_4, R, light_initial_position);
+        light_position[0] = light_position_4[0];
+        light_position[1] = light_position_4[1];
+        light_position[2] = light_position_4[2];
+        setVec3(model_shader, "point_light.position", light_position);
         setVec3(model_shader, "point_light.ambient", point_ambient);
         setVec3(model_shader, "point_light.specular", point_specular);
         setVec3(model_shader, "point_light.diffuse", point_diffuse);

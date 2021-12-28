@@ -97,22 +97,31 @@ int main(){
     setup_model(&backpack);
 
     /* model inspection */
+    /*
     Texture_Node * node;
     for (node = backpack.loaded_textures; node; node = node->next){
         printf("Loaded texture: %s\n", (node->texture).path);
     }
+    for (int mesh_no = 0; mesh_no < backpack.num_meshes; mesh_no++){
+        printf("Vertices for mesh %i\n", mesh_no);
+        for (int t = 0; t < backpack.meshes[mesh_no].num_vertices/100; t++){
+            printf("\tMesh %i normal %i: %4.2f, %4.2f, %4.2f\n", mesh_no, t*100,
+                   backpack.meshes[mesh_no].vertices[t*100].normal[0],
+                   backpack.meshes[mesh_no].vertices[t*100].normal[1],
+                   backpack.meshes[mesh_no].vertices[t*100].normal[2]);
+        }
+    }
+    */
+    /*
     for (int t = 0; t < backpack.num_meshes; t++){
-        /*
         printf("Mesh %i: %u vertices, %u indices, %u textures\n", t,
                backpack.meshes[t].num_vertices,
                backpack.meshes[t].num_indices,
                backpack.meshes[t].num_textures);
-        */
-        /*
         printf("Texture ids: %u, %u\n", backpack.meshes[t].textures[0].id,
                backpack.meshes[t].textures[1].id);
-        */
     }
+    */
 
     /* Shader init */
     struct Shader * light_shader = shaderInit();
@@ -131,6 +140,7 @@ int main(){
     // Init the camera `object` and hook its methods into the callbacks
     struct Camera * cam;
     cam = cameraInit(WIDTH, HEIGHT);
+    cam->movementSpeed = 5.f;
     setActiveCamera(cam);
     setActiveCameraPosition(0, 0, 3);
 
@@ -161,16 +171,17 @@ int main(){
 
         /* apply point light effects */
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};
-        vec3 point_diffuse = {4.f, 4.f, 4.f};
-        vec3 point_specular = {8.f, 8.f, 8.f};
-        vec3 point_position = {-2.f, 0.f, 0.f};
+        vec3 point_diffuse = {2.f, 2.f, 2.f};
+        vec3 point_specular = {5.f, 5.f, 5.f};
+        vec3 point_position = {2.f, 2.f, 2.f};
         setVec3(model_shader, "point_light.position", point_position);
         setVec3(model_shader, "point_light.ambient", point_ambient);
         setVec3(model_shader, "point_light.specular", point_specular);
         setVec3(model_shader, "point_light.diffuse", point_diffuse);
         setFloat(model_shader, "point_light.constant", 1.f);
-        setFloat(model_shader, "point_light.linear", 0.7f);
-        setFloat(model_shader, "point_light.quadratic", 1.8f);
+        setFloat(model_shader, "point_light.linear", 0.07f);
+        setFloat(model_shader, "point_light.quadratic", 0.017f);
+        setFloat(model_shader, "material.shininess", 32.f);
 
         draw_model(model_shader, backpack);
 

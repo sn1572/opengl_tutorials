@@ -129,11 +129,8 @@ model_error_t load_model(Model * model)
         return MODEL_UNEXP_ALLOC;
     }
     /* aiProcess_GenNormals */
-    /*
-    scene = aiImportFile(model->file_path, aiProcess_Triangulate | \
-                         aiProcess_FlipUVs);
-    */
-    scene = aiImportFile(model->file_path, aiProcess_Triangulate);
+    scene = aiImportFile(model->file_path, aiProcess_Triangulate \
+                         | aiProcess_GenNormals);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {
@@ -142,7 +139,7 @@ model_error_t load_model(Model * model)
     }
     /* dirname may alter the passed file path...and it can segfault
      * if you try to alter a string literal (aka, something defined
-     * by "this syyntax". To avoid this always initialized model path
+     * by "this syyntax"). To avoid this always initialized model path
      * like so:
      * char file[] = "some/path";
      * model.file_path = file;
@@ -393,10 +390,6 @@ model_error_t texture_from_file(char * file_name, unsigned int * texture_id)
         }
         glGenTextures(1, texture_id);
         glBindTexture(GL_TEXTURE_2D, *texture_id);
-        /*
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                     format, GL_UNSIGNED_BYTE, data);
-        */
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
                      format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);

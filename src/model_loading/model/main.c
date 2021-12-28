@@ -172,7 +172,7 @@ int main(){
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};
         vec3 point_diffuse = {2.f, 2.f, 2.f};
         vec3 point_specular = {5.f, 5.f, 5.f};
-        vec4 light_initial_position = {3.f, 0.f, 0.f, 0.f};
+        vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         vec4 light_position_4;
         vec3 light_position;
         mat4x4 R;

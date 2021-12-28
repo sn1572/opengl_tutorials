@@ -71,23 +71,25 @@ vec3 calc_directional_light(DirectionalLight light, vec3 normal,
 vec3 calc_point_light(PointLight light, vec3 normal, vec3 fragment_position,
                       vec3 view_direction)
 {
-    // Point source light with intensity attenuation by distance.
+    vec3 material_texture = texture(material.texture_diffuse1,
+                                    texture_coordinates).rgb;
     vec3 light_direction = normalize(light.position - fragment_position);
+    /* Tutorial has -light_direction here. 
+     * Drawing seems to indicate it should just be light_direction.
+     */
     vec3 reflect_direction = reflect(light_direction, normal);
+
+    vec3 ambient = light.ambient * material_texture;
+    float diff = max(dot(normal, light_direction), 0.0);
+    vec3 diffuse = light.diffuse * diff * material_texture;
     float spec = pow(max(dot(view_direction, reflect_direction), 0.0),
                      material.shininess);
+    vec3 specular = light.specular * spec * \
+                    texture(material.texture_specular1,
+                            texture_coordinates).rgb;
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
-    vec3 ambient = light.ambient * vec3(texture(material.texture_diffuse1,
-                                                texture_coordinates));
-    float diff = max(dot(normal, light_direction), 0.0);
-    vec3 diffuse = light.diffuse * diff * \
-                   vec3(texture(material.texture_diffuse1,
-                        texture_coordinates));
-    vec3 specular = light.specular * spec * \
-                    vec3(texture(material.texture_specular1,
-                                 texture_coordinates));
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;

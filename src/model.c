@@ -425,6 +425,9 @@ void free_mesh(Mesh * mesh)
         free(mesh->indices);
         mesh->indices = NULL;
     }
+    for (int i = 0; i < mesh->num_textures; i++){
+        glDeleteTextures(1, &(mesh->textures[i]).id);
+    }
     if (mesh->textures){
         free(mesh->textures);
         mesh->textures = NULL;
@@ -435,12 +438,9 @@ void free_mesh(Mesh * mesh)
     glDeleteBuffers(1, &mesh->VBO);
     glDeleteBuffers(1, &mesh->EBO);
     glDeleteVertexArrays(1, &mesh->VAO);
-    for (int i = 0; i < mesh->num_textures; i++){
-        glDeleteTextures(1, &(mesh->textures[i].id));
-    }
     if (glGetError() != GL_NO_ERROR){
-        fprintf(stderr, "%s %d: GL resource cleanup error.\n", __FILE__,
-                __LINE__);
+        fprintf(stderr, "%s %d: GL resource cleanup error, \
+                if not before.\n", __FILE__, __LINE__);
     }
 }
 
@@ -454,6 +454,7 @@ void free_model(Model * model)
         free_mesh(&(model->meshes[i]));
     }
     free(model->meshes);
+    model->meshes = NULL;
 }
 
 

@@ -87,6 +87,7 @@ int main(){
      * Eventually this will need to have its own thread to prevent
      * application non-responsiveness.
      */
+
     Model backpack;
     backpack.file_path = model_path;
     backpack.meshes = NULL;
@@ -108,10 +109,16 @@ int main(){
         printf("Loaded texture: %s\n", (node->texture).path);
     }
     for (int t = 0; t < backpack.num_meshes; t++){
+        /*
         printf("Mesh %i: %u vertices, %u indices, %u textures\n", t,
                backpack.meshes[t].num_vertices,
                backpack.meshes[t].num_indices,
                backpack.meshes[t].num_textures);
+        */
+        /*
+        printf("Texture ids: %u, %u\n", backpack.meshes[t].textures[0].id,
+               backpack.meshes[t].textures[1].id);
+        */
     }
 
     /* Shader init */
@@ -138,6 +145,8 @@ int main(){
 
     /* main loop */
     past = (float)glfwGetTime();
+    /* Turn on depth testing before drawing anything */
+    glEnable(GL_DEPTH_TEST);
 
     while (!glfwWindowShouldClose(window)){
         numFrames += 1;

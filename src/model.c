@@ -129,8 +129,11 @@ model_error_t load_model(Model * model)
         return MODEL_UNEXP_ALLOC;
     }
     /* aiProcess_GenNormals */
+    /*
     scene = aiImportFile(model->file_path, aiProcess_Triangulate | \
                          aiProcess_FlipUVs);
+    */
+    scene = aiImportFile(model->file_path, aiProcess_Triangulate);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {

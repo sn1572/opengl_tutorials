@@ -102,6 +102,18 @@ int main(){
     }
     setup_model(&backpack);
 
+    /* model inspection */
+    Texture_Node * node;
+    for (node = backpack.loaded_textures; node; node = node->next){
+        printf("Loaded texture: %s\n", (node->texture).path);
+    }
+    for (int t = 0; t < backpack.num_meshes; t++){
+        printf("Mesh %i: %u vertices, %u indices, %u textures\n", t,
+               backpack.meshes[t].num_vertices,
+               backpack.meshes[t].num_indices,
+               backpack.meshes[t].num_textures);
+    }
+
     /* Shader init */
     struct Shader * light_shader = shaderInit();
     if (light_shader->load(light_shader, light_vert_source,

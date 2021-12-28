@@ -291,7 +291,7 @@ Texture * load_material_textures(struct aiMaterial * mat,
                                  texture_t type_name, int * count,
                                  Model * model)
 {
-    /* Store the number of textures found in count. */
+    /* Store the number of textures in count. */
     struct aiString string;
     Texture * textures = NULL;
     unsigned int texture_id;
@@ -299,22 +299,23 @@ Texture * load_material_textures(struct aiMaterial * mat,
     Texture_Node * node;
     const int max_file_name = 256;
     char file_name[max_file_name];
-    char compare_name[max_file_name];
     int load_texture;
     Texture_Node * new_node = NULL;
     int string_length;
+    int texture_count;
 
+    texture_count = aiGetMaterialTextureCount(mat, type);
     if (!aiGetMaterialTextureCount(mat, type)){
         fprintf(stderr, "%s %d: %s: Material has no textures!\n", __FILE__,
                 __LINE__, __func__);
         return NULL;
     }
-    textures = malloc(aiGetMaterialTextureCount(mat, type) * sizeof(Texture));
+    textures = malloc(texture_count * sizeof(Texture));
     if (!textures){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
         return NULL;
     }
-    for (unsigned int i = 0; i < aiGetMaterialTextureCount(mat, type); i++){
+    for (unsigned int i = 0; i < texture_count; i++){
         /* arg i to aiGetMaterialTexture needs to be a uint */
         load_texture = 1;
         aiGetMaterialTexture(mat, type, i, &string, NULL, NULL, NULL, NULL,
@@ -326,13 +327,14 @@ Texture * load_material_textures(struct aiMaterial * mat,
             return NULL;
         }
         for (node = model->loaded_textures; node; node = node->next){
-            if (!strcmp(file_name, (node->texture).path)){
+            if (strcmp(file_name, (node->texture).path) == 0){
                 texture_id = (node->texture).id;
                 load_texture = 0;
                 break;
             }
         }
         if (load_texture){
+            printf("Loading texture: %s\n", file_name);
             if (texture_from_file(file_name, &texture_id)){
                 free(textures);
                 fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
@@ -342,7 +344,10 @@ Texture * load_material_textures(struct aiMaterial * mat,
         }
         texture.id = texture_id;
         texture.type = type_name;
-        texture.path = file_name;
+        string_length = strlen(file_name);
+        texture.path = malloc((string_length+1) * sizeof(char));
+        strncpy(texture.path, file_name, string_length);
+        texture.path[string_length] = '\0';
         textures[i] = texture;
         if (load_texture){
             new_node = malloc(sizeof(Texture_Node));
@@ -351,6 +356,7 @@ Texture * load_material_textures(struct aiMaterial * mat,
             append_texture_node(model, new_node);
         }
     }
+    *count = texture_count;
     return textures;
 }
 
@@ -366,12 +372,15 @@ model_error_t texture_from_file(char * file_name, unsigned int * texture_id)
         switch(nrChannels){
             case 1:
                 format = GL_RED;
+                printf("Format is GL_RED\n");
                 break;
             case 3:
                 format = GL_RGB;
+                printf("Format is GL_RGB\n");
                 break;
             case 4:
                 format = GL_RGBA;
+                printf("Format is GL_RGBA\n");
                 break;
             default:
                 fprintf(stderr, "%s %d: Unrecognized number of channels: %i\n",
@@ -381,7 +390,11 @@ model_error_t texture_from_file(char * file_name, unsigned int * texture_id)
         }
         glGenTextures(1, texture_id);
         glBindTexture(GL_TEXTURE_2D, *texture_id);
+        /*
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        */
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
                      format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -421,6 +434,10 @@ void free_mesh(Mesh * mesh)
     glDeleteVertexArrays(1, &mesh->VAO);
     for (int i = 0; i < mesh->num_textures; i++){
         glDeleteTextures(1, &(mesh->textures[i].id));
+    }
+    if (glGetError() != GL_NO_ERROR){
+        fprintf(stderr, "%s %d: GL resource cleanup error.\n", __FILE__,
+                __LINE__);
     }
 }
 

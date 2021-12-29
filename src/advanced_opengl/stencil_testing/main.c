@@ -13,10 +13,13 @@
 
 #define SUCCESS 0;
 #define FAILURE 1;
+#define ERR_MSG(string) do{\
+        fprintf(stderr, "%s %d: %s\n", __FILE__, __LINE__, string);\
+    } while(0);
 
 
 static char monotone_frag_source[] = "shaders/one_color";
-static char model_frag_source[] = "shaders/depth_buffer";
+static char model_frag_source[] = "shaders/model_frag";
 static char model_vert_source[] = "shaders/model_vert";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
@@ -101,19 +104,19 @@ int main(){
     struct Shader * light_shader = shaderInit();
     if (light_shader->load(light_shader, light_vert_source,
                            light_frag_source) != SHADER_NO_ERR){
-        fprintf(stderr, "light shader compilation error\n");
+        ERR_MSG("light shader compilation error");
         goto cleanup_gl;
     }
     struct Shader * model_shader = shaderInit();
     if (load(model_shader, model_vert_source,
              model_frag_source) != SHADER_NO_ERR){
-        fprintf(stderr, "model shader compilation error\n");
+        ERR_MSG("Model shader compilation error");
         goto cleanup_gl;
     }
     struct Shader * monotone_shader = shaderInit();
     if (load(monotone_shader, model_vert_source,
              monotone_frag_source) != SHADER_NO_ERR){
-        fprintf(stderr, "model shader compilation error\n");
+        ERR_MSG("Monotone shader compilation error");
         goto cleanup_gl;
     }
 
@@ -180,11 +183,16 @@ int main(){
         glStencilMask(0x00);
         glDisable(GL_DEPTH_TEST);
         use(monotone_shader);
+        setViewMatrix(cam, model_shader, "view");
+        setProjectionMatrix(cam, model_shader, "projection");
         mat4x4_scale(model_matrix, model_matrix, 1.05);
+        model_matrix[3][3] = 1.0;
         sendMatrixToShader(model_matrix, "model_matrix", monotone_shader);
         sendMatrixToShader(normal_matrix, "normal_matrix", monotone_shader);
-        /* Insert the rest of the uniforms */
         draw_model(monotone_shader, backpack);
+        glStencilMask(0xff);
+        glStencilFunc(GL_ALWAYS, 1, 0xff);
+        glEnable(GL_DEPTH_TEST);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

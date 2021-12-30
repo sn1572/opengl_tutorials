@@ -92,37 +92,15 @@ int main(){
         fprintf(stderr, "%s %d: Failed to load backpack model.\n", __FILE__,
                 __LINE__);
         goto end;
-    } else{
-        printf("Backpack loaded successfully (as far as I can tell).\n");
     }
     setup_model(&backpack);
 
-    /* model inspection */
-    /*
     Texture_Node * node;
+    int num_textures = 0;
     for (node = backpack.loaded_textures; node; node = node->next){
-        printf("Loaded texture: %s\n", (node->texture).path);
+        num_textures += 1;
     }
-    for (int mesh_no = 0; mesh_no < backpack.num_meshes; mesh_no++){
-        printf("Vertices for mesh %i\n", mesh_no);
-        for (int t = 0; t < backpack.meshes[mesh_no].num_vertices/100; t++){
-            printf("\tMesh %i normal %i: %4.2f, %4.2f, %4.2f\n", mesh_no, t*100,
-                   backpack.meshes[mesh_no].vertices[t*100].normal[0],
-                   backpack.meshes[mesh_no].vertices[t*100].normal[1],
-                   backpack.meshes[mesh_no].vertices[t*100].normal[2]);
-        }
-    }
-    */
-    /*
-    for (int t = 0; t < backpack.num_meshes; t++){
-        printf("Mesh %i: %u vertices, %u indices, %u textures\n", t,
-               backpack.meshes[t].num_vertices,
-               backpack.meshes[t].num_indices,
-               backpack.meshes[t].num_textures);
-        printf("Texture ids: %u, %u\n", backpack.meshes[t].textures[0].id,
-               backpack.meshes[t].textures[1].id);
-    }
-    */
+    printf("Backpack texture count: %i\n", num_textures);
 
     /* Shader init */
     struct Shader * light_shader = shaderInit();
@@ -172,7 +150,7 @@ int main(){
         /* apply point light effects */
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};
         vec3 point_diffuse = {2.f, 2.f, 2.f};
-        vec3 point_specular = {5.f, 5.f, 5.f};
+        vec3 point_specular = {3.f, 3.f, 3.f};
         vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         vec4 light_position_4;
         vec3 light_position;

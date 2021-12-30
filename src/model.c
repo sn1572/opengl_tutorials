@@ -63,23 +63,49 @@ model_error_t draw_mesh(Shader * shader, Mesh mesh)
     model_error_t result = MODEL_SUCCESS;
     unsigned int diffuse_count = 1;
     unsigned int specular_count = 1;
+    unsigned int normal_count = 1;
     /* May get quiet errors if the name string is not long enough,
      * resulting in invalid uniform names being sent to the shader.
      * The shader generally won't tell you if that happens.
+     * For this reason we check snprintf for errors carefully and
+     * allocate a spacious name buffer.
      */
     const int max_unif_name = 128;
     char name[max_unif_name];
+    int string_length;
 
     for (unsigned int i=0; i < mesh.num_textures; i++){
         glActiveTexture(GL_TEXTURE0 + i);
         switch(mesh.textures[i].type){
             case DIFFUSE:
-                snprintf(name, max_unif_name, "material.texture_diffuse%i",
-                         diffuse_count++);
+                string_length = snprintf(name, max_unif_name,
+                                         "material.texture_diffuse%i",
+                                         diffuse_count++);
+                if (string_length >= max_unif_name || string_length < 0){
+                    fprintf(stderr, "%s %d: snprintf error.\n", __FILE__,
+                            __LINE__);
+                    return MODEL_ERR;
+                }
                 break;
             case SPECULAR:
-                snprintf(name, max_unif_name, "material.texture_specular%i",
-                         specular_count++);
+                string_length = snprintf(name, max_unif_name,
+                                         "material.texture_specular%i",
+                                         specular_count++);
+                if (string_length >= max_unif_name || string_length < 0){
+                    fprintf(stderr, "%s %d: snprintf error.\n", __FILE__,
+                            __LINE__);
+                    return MODEL_ERR;
+                }
+                break;
+            case NORMAL:
+                string_length = snprintf(name, max_unif_name,
+                                         "material.texture_normal%i",
+                                         normal_count++);
+                if (string_length >= max_unif_name || string_length < 0){
+                    fprintf(stderr, "%s %d: snprintf error.\n", __FILE__,
+                            __LINE__);
+                    return MODEL_ERR;
+                }
                 break;
             default:
                 fprintf(stderr, "%s %d: Texture type unrecognized: %i\n",
@@ -192,8 +218,11 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
     struct aiMaterial * material;
     Texture * diffuse_maps = NULL;
     Texture * specular_maps = NULL;
+    Texture * normal_maps = NULL;
     int num_diffuse_textures = 0;
     int num_specular_textures = 0;
+    int num_normal_textures = 0;
+    model_error_t result;
 
     /* Vertex processing. */
     out->vertices = malloc(mesh->mNumVertices * sizeof(Vertex));
@@ -245,18 +274,30 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
     /* Texture processing */
     if (mesh->mMaterialIndex >= 0){
         material = scene->mMaterials[mesh->mMaterialIndex];
-        diffuse_maps = load_material_textures(material, aiTextureType_DIFFUSE,
-                                              DIFFUSE, &num_diffuse_textures,
-                                              model);
-        specular_maps = load_material_textures(material,
-                                               aiTextureType_SPECULAR,
-                                               SPECULAR,
-                                               &num_specular_textures,
-                                               model);
+        result = load_material_textures(material,
+                                        aiTextureType_DIFFUSE,
+                                        DIFFUSE,
+                                        &num_diffuse_textures,
+                                        model,
+                                        &diffuse_maps);
+        result += load_material_textures(material,
+                                         aiTextureType_SPECULAR,
+                                         SPECULAR,
+                                         &num_specular_textures,
+                                         model,
+                                         &specular_maps);
+        result += load_material_textures(material,
+                                         aiTextureType_HEIGHT,
+                                         NORMAL,
+                                         &num_normal_textures,
+                                         model,
+                                         &normal_maps);
         out->textures = malloc((num_diffuse_textures + \
-                                num_specular_textures) * sizeof(Texture));
-        if (!out->textures || !diffuse_maps || !specular_maps){
-            fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
+                                num_specular_textures + \
+                                num_normal_textures) * sizeof(Texture));
+        if (!out->textures || result){
+            fprintf(stderr, "%s %d: Error loading textures.\n", __FILE__,
+                    __LINE__);
             free(out->vertices);
             out->vertices = NULL;
             free(out->indices);
@@ -269,31 +310,46 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
                 free(diffuse_maps);
             if (specular_maps)
                 free(specular_maps);
+            if (normal_maps)
+                free(normal_maps);
             return MODEL_ERR;
         }
-        out->num_textures = num_diffuse_textures + num_specular_textures;
-        for (int i = 0; i < num_diffuse_textures; i++){
-            out->textures[i] = diffuse_maps[i];
+        out->num_textures = num_diffuse_textures + num_specular_textures \
+                            + num_normal_textures;
+        if (num_diffuse_textures > 0){
+            for (int i = 0; i < num_diffuse_textures; i++){
+                out->textures[i] = diffuse_maps[i];
+            }
         }
-        for (int i = 0; i < num_specular_textures; i++){
-            out->textures[i+num_diffuse_textures] = specular_maps[i];
+        if (num_specular_textures > 0){
+            for (int i = 0; i < num_specular_textures; i++){
+                out->textures[i+num_diffuse_textures] = specular_maps[i];
+            }
         }
-        free(diffuse_maps);
-        free(specular_maps);
+        if (num_normal_textures > 0){
+            for (int i = 0; i < num_normal_textures; i++){
+                out->textures[i+num_diffuse_textures+num_specular_textures] \
+                = normal_maps[i];
+            }
+        }
+        if (diffuse_maps)
+            free(diffuse_maps);
+        if (specular_maps);
+            free(specular_maps);
+        if (normal_maps)
+            free(normal_maps);
     }
-
     return MODEL_SUCCESS;
 }
 
 
-Texture * load_material_textures(struct aiMaterial * mat,
-                                 enum aiTextureType type,
-                                 texture_t type_name, int * count,
-                                 Model * model)
+model_error_t load_material_textures(struct aiMaterial * mat,
+                                     enum aiTextureType type,
+                                     texture_t type_name, int * count,
+                                     Model * model, Texture ** out)
 {
     /* Store the number of textures in count. */
     struct aiString string;
-    Texture * textures = NULL;
     unsigned int texture_id;
     Texture texture;
     Texture_Node * node;
@@ -304,16 +360,18 @@ Texture * load_material_textures(struct aiMaterial * mat,
     int string_length;
     int texture_count;
 
+    if (*out){
+        fprintf(stderr, "%s %d: Output pointer not NULL\n", __FILE__, __LINE__);
+        return MODEL_ERR;
+    }
     texture_count = aiGetMaterialTextureCount(mat, type);
     if (!aiGetMaterialTextureCount(mat, type)){
-        fprintf(stderr, "%s %d: %s: Material has no textures!\n", __FILE__,
-                __LINE__, __func__);
-        return NULL;
+        return MODEL_SUCCESS;
     }
-    textures = malloc(texture_count * sizeof(Texture));
-    if (!textures){
+    *out = malloc(texture_count * sizeof(Texture));
+    if (!*out){
         fprintf(stderr, "%s %d: Out of memory.\n", __FILE__, __LINE__);
-        return NULL;
+        return MODEL_NO_MEM;
     }
     for (unsigned int i = 0; i < texture_count; i++){
         /* arg i to aiGetMaterialTexture needs to be a uint */
@@ -323,8 +381,9 @@ Texture * load_material_textures(struct aiMaterial * mat,
         string_length = snprintf(file_name, max_file_name, "%s/%s",
                                  model->directory, string.data);
         if (string_length >= max_file_name || string_length < 0){
-            fprintf(stderr, "snprintf error.\n");
-            return NULL;
+            free(*out);
+            fprintf(stderr, "%s %d: snprintf error.\n", __FILE__, __LINE__);
+            return MODEL_ERR;
         }
         for (node = model->loaded_textures; node; node = node->next){
             if (strcmp(file_name, (node->texture).path) == 0){
@@ -334,12 +393,12 @@ Texture * load_material_textures(struct aiMaterial * mat,
             }
         }
         if (load_texture){
-            printf("Loading texture: %s\n", file_name);
+            printf("Loading texture %s\n", file_name);
             if (texture_from_file(file_name, &texture_id)){
-                free(textures);
+                free(*out);
                 fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
                         __LINE__);
-                return NULL;
+                return MODEL_ERR;
             }
         }
         texture.id = texture_id;
@@ -348,7 +407,7 @@ Texture * load_material_textures(struct aiMaterial * mat,
         texture.path = malloc((string_length+1) * sizeof(char));
         strncpy(texture.path, file_name, string_length);
         texture.path[string_length] = '\0';
-        textures[i] = texture;
+        *out[i] = texture;
         if (load_texture){
             new_node = malloc(sizeof(Texture_Node));
             new_node->texture = texture;
@@ -357,7 +416,7 @@ Texture * load_material_textures(struct aiMaterial * mat,
         }
     }
     *count = texture_count;
-    return textures;
+    return MODEL_SUCCESS;
 }
 
 

@@ -32,8 +32,9 @@
     typedef struct Vertex Vertex;
 
     typedef enum {
-        DIFFUSE,
-        SPECULAR,
+        DIFFUSE = 0,
+        SPECULAR = 1,
+        NORMAL = 2,
     } texture_t;
     
     struct Texture {
@@ -81,10 +82,10 @@
     model_error_t process_mesh(struct aiMesh * mesh,
                                const struct aiScene * scene,
                                Mesh * out, Model * model);
-    Texture * load_material_textures(struct aiMaterial * material,
-                                     enum aiTextureType type,
-                                     texture_t type_name, int * count,
-                                     Model * model);
+    model_error_t load_material_textures(struct aiMaterial * material,
+                                         enum aiTextureType type,
+                                         texture_t type_name, int * count,
+                                         Model * model, Texture ** out);
     model_error_t texture_from_file(char * fname, unsigned int * texture_id);
     void free_mesh(Mesh * mesh);
     void free_model(Model * model);

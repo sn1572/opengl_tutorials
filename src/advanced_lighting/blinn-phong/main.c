@@ -181,7 +181,7 @@ int main(){
         setFloat(model_shader, "point_light.constant", 1.f);
         setFloat(model_shader, "point_light.linear", 0.07f);
         setFloat(model_shader, "point_light.quadratic", 0.017f);
-        setFloat(model_shader, "material.shininess", 2.f);
+        setFloat(model_shader, "material.shininess", 32.f);
 
         draw_model(model_shader, backpack);
 

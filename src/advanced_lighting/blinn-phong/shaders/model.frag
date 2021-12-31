@@ -31,6 +31,8 @@ struct Light {
 uniform Material material;
 uniform vec3 camera_position;
 uniform Light point_light;
+const float pi  = 3.14159265;
+const float ksh = 16.0;
 
 
 vec3 calc_directional_light(Light light, vec3 normal,
@@ -57,6 +59,7 @@ vec3 calc_directional_light(Light light, vec3 normal,
 vec3 calc_point_light(Light light, vec3 normal, vec3 fragment_position,
                       vec3 view_direction)
 {
+    float shininess_correction;
     vec3 material_texture = texture(material.texture_diffuse1,
                                     texture_coordinates).rgb;
     vec3 light_direction = normalize(light.position - fragment_position);
@@ -72,8 +75,13 @@ vec3 calc_point_light(Light light, vec3 normal, vec3 fragment_position,
     float diff = max(dot(normal_texture, light_direction), 0.0);
     vec3 diffuse = light.diffuse * diff * material_texture;
     vec3 avg_direction = normalize(light_direction + view_direction);
+    /* Blinn-Phong mode */
+    shininess_correction = (8.0 + ksh) / (8.0 * pi);
+    /* Phong */
+    //shininess_correction = (2.0 + ksh) / (2.0 * pi);
     float spec = pow(max(dot(normal_texture, avg_direction), 0.0),
                      material.shininess);
+    spec *= shininess_correction;
     vec3 specular = light.specular * spec * \
                     texture(material.texture_specular1,
                             texture_coordinates).rgb;

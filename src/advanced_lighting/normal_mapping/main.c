@@ -15,8 +15,8 @@
 #define FAILURE 1;
 
 
-static char model_frag_source[] = "shaders/model_frag_2";
-static char model_vert_source[] = "shaders/model_vert_2";
+static char model_frag_source[] = "shaders/model.frag";
+static char model_vert_source[] = "shaders/model.vert";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
 static int WIDTH = 1920;
@@ -161,7 +161,7 @@ int main(){
 
         /* apply point light effects */
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};
-        vec3 point_diffuse = {2.f, 2.f, 2.f};
+        vec3 point_diffuse = {1.f, 1.f, 1.f};
         vec3 point_specular = {3.f, 3.f, 3.f};
         vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         vec4 light_position_4;

@@ -6,6 +6,7 @@ in vec3 normal;
 in vec2 texture_coordinates; 
 in vec3 view_direction;
 in vec3 light_direction;
+in mat3 tbn_matrix;
 
 out vec4 frag_color;
 
@@ -58,13 +59,17 @@ vec3 calc_point_light(Light light, vec3 fragment_position)
 {
     vec3 material_texture = texture(material.texture_diffuse1,
                                     texture_coordinates).rgb;
-    /* Tutorial has -light_direction here. 
-     * Drawing seems to indicate it should just be light_direction.
-     */
     vec3 normal_texture = texture(material.texture_normal1,
                                   texture_coordinates).rgb;
     normal_texture = normalize(2.0 * normal_texture - vec3(1.0));
-    vec3 reflect_direction = reflect(light_direction, normal_texture);
+    /* R(i, n) - R is reflection, i is incident vector, n is normal vector.
+     * R(i, n) by definition is i - 2(i * n)n. One can check that
+     * R(i, Mn) = M R(M^Ti, n) when M is an orthogonal matrix.
+     * Therefore we don't actually save ourselves a matrix multiplication
+     * in the vertex shader using pure Phong.
+     */
+    vec3 reflect_direction = tbn_matrix * reflect(light_direction, \
+                                                  normal_texture);
     vec3 ambient = light.ambient * material_texture;
     float diff = max(dot(normal_texture, light_direction), 0.0);
     vec3 diffuse = light.diffuse * diff * material_texture;

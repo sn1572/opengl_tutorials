@@ -10,6 +10,7 @@ out vec3 normal;
 out vec2 texture_coordinates; 
 out vec3 view_direction;
 out vec3 light_direction;
+out mat3 tbn_matrix;
 
 struct Light {
     vec3 position;           //not for directional
@@ -39,9 +40,10 @@ void main(){
     vec3 tangent = normalize(vec3(normal_matrix * vec4(in_tangent, 0.0)));
     vec3 bitangent = normalize(vec3(normal_matrix * vec4(in_bitangent, 0.0)));
     normal = normalize(vec3(normal_matrix * vec4(in_normal, 0.0)));
-    mat3 tbn_matrix = transpose(mat3(tangent, bitangent, normal));
-    light_direction = tbn_matrix * normalize(point_light.position \
-                                             - fragment_position);
-    view_direction = tbn_matrix * normalize(camera_position \
-                                            - fragment_position);
+    tbn_matrix = mat3(tangent, bitangent, normal);
+    mat3 tbn_transpose = transpose(tbn_matrix);
+    light_direction = tbn_transpose * normalize(point_light.position \
+                                                - fragment_position);
+    view_direction = tbn_transpose * normalize(camera_position \
+                                               - fragment_position);
 }

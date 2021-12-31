@@ -14,7 +14,6 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model_matrix;
 uniform mat4 normal_matrix;
-uniform Material material;
 
 
 void main(){
@@ -25,7 +24,4 @@ void main(){
     vec3 bitangent = normalize(vec3(normal_matrix * vec4(in_bitangent, 0.0)));
     normal = normalize(vec3(normal_matrix * vec4(in_normal, 0.0)));
     tbn_matrix = mat3(tangent, bitangent, normal);
-    /*
-    normal = normalize(tbn_matrix * in_normal);
-    */
 }

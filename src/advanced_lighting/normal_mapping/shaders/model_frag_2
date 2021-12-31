@@ -4,6 +4,8 @@
 in vec3 fragment_position;
 in vec3 normal;
 in vec2 texture_coordinates; 
+in vec3 view_direction;
+in vec3 light_direction;
 
 out vec4 frag_color;
 
@@ -28,7 +30,6 @@ struct Light {
 };
 
 uniform Material material;
-uniform vec3 camera_position;
 uniform Light point_light;
 
 
@@ -53,12 +54,10 @@ vec3 calc_directional_light(Light light, vec3 normal,
 }
 
 
-vec3 calc_point_light(Light light, vec3 normal, vec3 fragment_position,
-                      vec3 view_direction)
+vec3 calc_point_light(Light light, vec3 normal, vec3 fragment_position)
 {
     vec3 material_texture = texture(material.texture_diffuse1,
                                     texture_coordinates).rgb;
-    vec3 light_direction = normalize(light.position - fragment_position);
     /* Tutorial has -light_direction here. 
      * Drawing seems to indicate it should just be light_direction.
      */
@@ -118,11 +117,8 @@ vec3 calc_spotlight(Light light, vec3 normal, vec3 fragment_position,
 
 
 void main(){
-    vec3 view_direction = normalize(camera_position - fragment_position);
     vec3 total;
-
-    total = calc_point_light(point_light, normal,
-                             fragment_position, view_direction);
+    total = calc_point_light(point_light, normal, fragment_position);
 	frag_color = texture(material.texture_diffuse1, texture_coordinates) * \
                  vec4(total, 1.0);
 }

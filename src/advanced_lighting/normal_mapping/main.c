@@ -15,8 +15,8 @@
 #define FAILURE 1;
 
 
-static char model_frag_source[] = "shaders/model_frag";
-static char model_vert_source[] = "shaders/model_vert";
+static char model_frag_source[] = "shaders/model_frag_2";
+static char model_vert_source[] = "shaders/model_vert_2";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
 static int WIDTH = 1920;

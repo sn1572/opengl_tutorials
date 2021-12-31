@@ -146,7 +146,7 @@ int main(){
         numFrames += 1;
         time = (float)glfwGetTime();
 
-        glClearColor(0.f, 0.f, 0.f, 1.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Can this be moved outside the main loop?
         glfwCompatKeyboardCallback(window);
@@ -160,9 +160,9 @@ int main(){
         sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
 
         /* apply point light effects */
-        vec3 point_ambient = {0.4f, 0.4f, 0.4f};
-        vec3 point_diffuse = {1.f, 1.f, 1.f};
-        vec3 point_specular = {3.f, 3.f, 3.f};
+        vec3 point_ambient = {1.f, 1.f, 1.f};
+        vec3 point_diffuse = {3.f, 3.f, 3.f};
+        vec3 point_specular = {1.f, 1.f, 1.f};
         vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         vec4 light_position_4;
         vec3 light_position;
@@ -181,7 +181,7 @@ int main(){
         setFloat(model_shader, "point_light.constant", 1.f);
         setFloat(model_shader, "point_light.linear", 0.07f);
         setFloat(model_shader, "point_light.quadratic", 0.017f);
-        setFloat(model_shader, "material.shininess", 32.f);
+        setFloat(model_shader, "material.shininess", 2.f);
 
         draw_model(model_shader, backpack);
 

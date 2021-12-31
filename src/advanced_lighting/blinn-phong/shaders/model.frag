@@ -67,16 +67,13 @@ vec3 calc_point_light(Light light, vec3 normal, vec3 fragment_position,
                                   texture_coordinates).rgb;
     normal_texture = normalize(2.0 * normal_texture - vec3(1.0));
     normal_texture = normalize(tbn_matrix * normal_texture);
-    vec3 reflect_direction = reflect(light_direction, normal_texture);
 
     vec3 ambient = light.ambient * material_texture;
     float diff = max(dot(normal_texture, light_direction), 0.0);
     vec3 diffuse = light.diffuse * diff * material_texture;
-    float spec = 0.0;
-    if (dot(view_direction, normal_texture) < 0){
-        spec = pow(max(dot(view_direction, reflect_direction), 0.0),
+    vec3 avg_direction = normalize(light_direction + view_direction);
+    float spec = pow(max(dot(normal_texture, avg_direction), 0.0),
                      material.shininess);
-    }
     vec3 specular = light.specular * spec * \
                     texture(material.texture_specular1,
                             texture_coordinates).rgb;

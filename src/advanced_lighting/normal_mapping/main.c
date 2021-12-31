@@ -15,8 +15,8 @@
 #define FAILURE 1;
 
 
-static char model_frag_source[] = "shaders/model.frag";
-static char model_vert_source[] = "shaders/model.vert";
+static char model_frag_source[] = "shaders/vert_normal.frag";
+static char model_vert_source[] = "shaders/model2.vert";
 static char light_frag_source[] = "shaders/light_frag";
 static char light_vert_source[] = "shaders/light_vert";
 static int WIDTH = 1920;
@@ -94,18 +94,6 @@ int main(){
         goto end;
     }
     setup_model(&backpack);
-    /*
-    for (int i = 0; i < backpack.meshes[0].num_vertices; i += 100){
-        printf("Bitangent %i: (%5.3f, %5.3f, %5.3f)\n", i,
-               backpack.meshes[0].vertices[i].bitangent[0],
-               backpack.meshes[0].vertices[i].bitangent[1],
-               backpack.meshes[0].vertices[i].bitangent[2]);
-        printf("Tangent %i: (%5.3f, %5.3f, %5.3f)\n\n", i,
-               backpack.meshes[0].vertices[i].tangent[0],
-               backpack.meshes[0].vertices[i].tangent[1],
-               backpack.meshes[0].vertices[i].tangent[2]);
-    }
-    */
 
     Texture_Node * node;
     int num_textures = 0;
@@ -115,12 +103,6 @@ int main(){
     printf("Backpack texture count: %i\n", num_textures);
 
     /* Shader init */
-    struct Shader * light_shader = shaderInit();
-    if (light_shader->load(light_shader, light_vert_source,
-                           light_frag_source) != SHADER_NO_ERR){
-        fprintf(stderr, "light shader compilation error\n");
-        goto cleanup_gl;
-    }
     struct Shader * model_shader = shaderInit();
     if (load(model_shader, model_vert_source,
              model_frag_source) != SHADER_NO_ERR){

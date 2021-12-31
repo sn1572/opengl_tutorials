@@ -14,6 +14,7 @@
     #define STB_IMAGE_IMPLEMENTATION
     #include <stb_image.h>
 
+
     typedef enum {
         MODEL_SUCCESS =      0,
         MODEL_GL_ERR =      -1,
@@ -27,20 +28,22 @@
     struct Vertex {
         vec3 position;
         vec3 normal;
-        vec3 texture_coordinates;
+        vec2 texture_coordinates;
+        vec3 tangent;
+        vec3 bitangent;
     };
     typedef struct Vertex Vertex;
 
     typedef enum {
-        DIFFUSE = 0,
+        DIFFUSE  = 0,
         SPECULAR = 1,
-        NORMAL = 2,
+        NORMAL   = 2,
     } texture_t;
     
     struct Texture {
         unsigned int id;
-        texture_t type;
-        char * path;
+        texture_t    type;
+        char *       path;
     };
     typedef struct Texture Texture;
 
@@ -71,6 +74,7 @@
         Texture_Node * loaded_textures;
     };
     typedef struct Model Model;
+
 
     model_error_t setup_model(Model * model);
     model_error_t setup_mesh(Mesh * mesh);

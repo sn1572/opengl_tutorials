@@ -94,6 +94,18 @@ int main(){
         goto end;
     }
     setup_model(&backpack);
+    /*
+    for (int i = 0; i < backpack.meshes[0].num_vertices; i += 100){
+        printf("Bitangent %i: (%5.3f, %5.3f, %5.3f)\n", i,
+               backpack.meshes[0].vertices[i].bitangent[0],
+               backpack.meshes[0].vertices[i].bitangent[1],
+               backpack.meshes[0].vertices[i].bitangent[2]);
+        printf("Tangent %i: (%5.3f, %5.3f, %5.3f)\n\n", i,
+               backpack.meshes[0].vertices[i].tangent[0],
+               backpack.meshes[0].vertices[i].tangent[1],
+               backpack.meshes[0].vertices[i].tangent[2]);
+    }
+    */
 
     Texture_Node * node;
     int num_textures = 0;

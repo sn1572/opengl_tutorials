@@ -46,6 +46,12 @@ model_error_t setup_mesh(Mesh * mesh)
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, texture_coordinates));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, tangent));
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, bitangent));
     // This breaks the existing vertex array binding
     glBindVertexArray(0);
 
@@ -154,9 +160,9 @@ model_error_t load_model(Model * model)
                 model->loaded_textures is NULL.\n");
         return MODEL_UNEXP_ALLOC;
     }
-    /* aiProcess_GenNormals */
     scene = aiImportFile(model->file_path, aiProcess_Triangulate \
-                         | aiProcess_GenNormals);
+                         | aiProcess_GenNormals \
+                         | aiProcess_CalcTangentSpace);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || \
         !scene->mRootNode)
     {
@@ -247,6 +253,21 @@ model_error_t process_mesh(struct aiMesh * mesh, const struct aiScene * scene,
         } else{
             vertex.texture_coordinates[0] = 0.f;
             vertex.texture_coordinates[1] = 0.f;
+        }
+        if (mesh->mTangents){
+            vertex.tangent[0] = mesh->mTangents[i].x;
+            vertex.tangent[1] = mesh->mTangents[i].y;
+            vertex.tangent[2] = mesh->mTangents[i].z;
+            vertex.bitangent[0] = mesh->mBitangents[i].x;
+            vertex.bitangent[1] = mesh->mBitangents[i].y;
+            vertex.bitangent[2] = mesh->mBitangents[i].z;
+        } else{
+            vertex.tangent[0] = 0.f;
+            vertex.tangent[1] = 0.f;
+            vertex.tangent[2] = 0.f;
+            vertex.bitangent[0] = 0.f;
+            vertex.bitangent[1] = 0.f;
+            vertex.bitangent[2] = 0.f;
         }
         out->vertices[i] = vertex;
     }

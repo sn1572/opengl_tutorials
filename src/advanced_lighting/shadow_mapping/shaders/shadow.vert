@@ -12,6 +12,7 @@ out vec2 texture_coordinates;
 out vec3 view_direction;
 out vec3 light_direction;
 out mat3 tbn_matrix;
+out vec4 shadow_position;
 
 struct Light {
     vec3 position;           //not for directional
@@ -24,6 +25,7 @@ struct Light {
     float constant;          //point light
     float linear;            //point light
     float quadratic;         //point light
+    mat4 shadow_matrix;
 };
 
 uniform mat4 projection;
@@ -47,4 +49,5 @@ void main(){
                                                 - fragment_position);
     view_direction = tbn_transpose * normalize(camera_position \
                                                - fragment_position);
+    shadow_position = point_light.shadow_matrix * vec4(fragment_position, 1.0);
 }

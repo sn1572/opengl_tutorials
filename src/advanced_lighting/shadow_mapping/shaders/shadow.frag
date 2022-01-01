@@ -7,6 +7,7 @@ in vec2 texture_coordinates;
 in vec3 view_direction;
 in vec3 light_direction;
 in mat3 tbn_matrix;
+in vec4 shadow_position;
 
 out vec4 frag_color;
 
@@ -28,6 +29,8 @@ struct Light {
     float constant;          //point light
     float linear;            //point light
     float quadratic;         //point light
+    mat4 shadow_matrix;
+    sampler2D depth_texture;
 };
 
 uniform Material material;
@@ -55,6 +58,20 @@ vec3 calc_directional_light(Light light, vec3 normal,
                     vec3(texture(material.texture_specular1,
                                  texture_coordinates));
     return (ambient + diffuse + specular);
+}
+
+
+float shadow_calculation(Light light, vec4 shadow_position)
+{
+    /* This division performed automagically by the vert shader normally */
+    vec3 projected_coordinates = shadow_position.xyz / shadow_position.w;
+    /* light-space position is in [-1,1], gotta move to [0,1] */
+    projected_coordinates = projected_coordinates * 0.5 + vec3(0.5);
+    float closest_depth = texture(light.depth_texture,
+                                  projected_coordinates.xy).r;
+    float current_depth = projected_coordinates.z;
+    float shadow = current_depth > closest_depth ? 1.0 : 0.0;
+    return shadow;
 }
 
 
@@ -87,9 +104,10 @@ vec3 calc_point_light(Light light, vec3 fragment_position)
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
+    float shadow = shadow_calculation(shadow_position);
     ambient *= attenuation;
-    diffuse *= attenuation;
-    specular *= attenuation;
+    diffuse *= (1.0 - shadow) * attenuation;
+    specular *= (1.0 - shadow) * attenuation;
     return (ambient + diffuse + specular);
 }
 

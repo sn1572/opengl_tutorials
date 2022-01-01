@@ -1,8 +1,8 @@
 CC = gcc
 headers = ../../../headers
 lib_dir = ../../../lib
-libs = ../../../lib/libshader.so ../../../lib/libcamera.so ../../../lib/libmodel.so
-lib_srcs = ../../shader.c ../../camera.c ../../model.c
+libs = ../../../lib/libshader.so ../../../lib/libcamera.so ../../../lib/libmodel.so $(lib_dir)/liblight.so
+lib_srcs = ../../shader.c ../../camera.c ../../model.c ../../light.c
 binaries = main
 glad_install_dir = /opt/glad
 assimp_include_dir = /home/markbolding/Documents/assimp-5.0.1/include
@@ -20,7 +20,8 @@ $(binaries): %: %.c $(libs)
 		-I$(headers) -o $@.o $<
 	$(CC) -o $@ $@.o -Wl,-rpath,$(lib_dir) -L$(lib_dir) \
 		-Wl,-rpath,$(assimp_lib_dir) -L$(assimp_lib_dir) \
-		-lshader -lglfw -lGL -lglad -ldl -lm -lassimp -lcamera -lmodel
+		-lshader -lglfw -lGL -lglad -ldl -lm -lassimp -lcamera -lmodel \
+		-llight
 
 .PHONY: clean
 

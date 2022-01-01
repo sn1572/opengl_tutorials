@@ -14,9 +14,11 @@
         SHADER_FS_ERR,
     } shader_err_t;
 
-    #define err_print(msg){\
-        fprintf(stderr, "%s %d: "msg, __FILE__, __LINE__);\
-    }
+    #ifndef err_print
+        #define err_print(msg){\
+            fprintf(stderr, "%s %d: "msg"\n", __FILE__, __LINE__);\
+        }
+    #endif
 
     struct Shader{
         unsigned int ID;

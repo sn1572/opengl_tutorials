@@ -9,16 +9,15 @@
 #include <camera.h>
 #include <shader.h>
 #include <model.h>
+#include <light.h>
 
 
 #define SUCCESS 0;
 #define FAILURE 1;
 
 
-static char model_frag_source[] = "shaders/vert_normal.frag";
-static char model_vert_source[] = "shaders/model2.vert";
-static char light_frag_source[] = "shaders/light_frag";
-static char light_vert_source[] = "shaders/light_vert";
+static char model_frag_source[] = "shaders/model.frag";
+static char model_vert_source[] = "shaders/model.vert";
 static int WIDTH = 1920;
 static int HEIGHT = 1080;
 
@@ -110,14 +109,23 @@ int main(){
         goto cleanup_gl;
     }
 
-    // Init the camera `object` and hook its methods into the callbacks
     struct Camera * cam;
     cam = cameraInit(WIDTH, HEIGHT);
     cam->movementSpeed = 5.f;
     setActiveCamera(cam);
     setActiveCameraPosition(0, 0, 3);
 
-    /* callback assignment former location */
+    Light light;
+    light_init(&light);
+    light.name = malloc(12 * sizeof(char));
+    snprintf(light.name, 12, "point_light");
+    vec3 point_ambient = {0.4f, 0.4f, 0.4f};
+    vec3 point_diffuse = {1.f, 1.f, 1.f};
+    vec3 point_specular = {3.f, 3.f, 3.f};
+    vec3_dup(light.ambient, point_ambient);
+    vec3_dup(light.diffuse, point_diffuse);
+    vec3_dup(light.specular, point_specular);
+    printf("Light name: %s\n", light.name);
 
     /* main loop */
     past = (float)glfwGetTime();
@@ -142,29 +150,22 @@ int main(){
         sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
 
         /* apply point light effects */
-        vec3 point_ambient = {0.4f, 0.4f, 0.4f};
-        vec3 point_diffuse = {1.f, 1.f, 1.f};
-        vec3 point_specular = {3.f, 3.f, 3.f};
-        vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         vec4 light_position_4;
         vec3 light_position;
         mat4x4 R;
         mat4x4_identity(R);
         float angle = time*50*M_PI/180;
         mat4x4_rotate(R, R, 0.f, 1.f, 0.f, angle);
+        vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         mat4x4_mul_vec4(light_position_4, R, light_initial_position);
+        vec3_dup(light.position, light_position_4);
+        /*
         light_position[0] = light_position_4[0];
         light_position[1] = light_position_4[1];
         light_position[2] = light_position_4[2];
-        setVec3(model_shader, "point_light.position", light_position);
-        setVec3(model_shader, "point_light.ambient", point_ambient);
-        setVec3(model_shader, "point_light.specular", point_specular);
-        setVec3(model_shader, "point_light.diffuse", point_diffuse);
-        setFloat(model_shader, "point_light.constant", 1.f);
-        setFloat(model_shader, "point_light.linear", 0.07f);
-        setFloat(model_shader, "point_light.quadratic", 0.017f);
+        */
         setFloat(model_shader, "material.shininess", 4.f);
-
+        light_to_shader(&light, model_shader);
         draw_model(model_shader, backpack);
 
         glfwSwapBuffers(window);

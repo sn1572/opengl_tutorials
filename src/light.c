@@ -49,7 +49,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     int retval;
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.position", light->name);
+                      "%s.position", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -57,7 +57,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setVec3(shader, uniform_name, light->position);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.direction", light->name);
+                      "%s.direction", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -65,7 +65,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setVec3(shader, uniform_name, light->direction);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.ambient", light->name);
+                      "%s.ambient", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -73,7 +73,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setVec3(shader, uniform_name, light->ambient);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.specular", light->name);
+                      "%s.specular", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -81,7 +81,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setVec3(shader, uniform_name, light->specular);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.diffuse", light->name);
+                      "%s.diffuse", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -89,7 +89,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setVec3(shader, uniform_name, light->diffuse);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.theta_min", light->name);
+                      "%s.theta_min", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -97,7 +97,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setFloat(shader, uniform_name, light->theta_min);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.theta_taper_start", light->name);
+                      "%s.theta_taper_start", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -105,7 +105,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setFloat(shader, uniform_name, light->theta_taper_start);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.constant", light->name);
+                      "%s.constant", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -113,7 +113,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setFloat(shader, uniform_name, light->constant);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.linear", light->name);
+                      "%s.linear", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -121,7 +121,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setFloat(shader, uniform_name, light->linear);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.quadratic", light->name);
+                      "%s.quadratic", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;
@@ -129,7 +129,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setFloat(shader, uniform_name, light->quadratic);
 
     retval = snprintf(uniform_name, max_unif_name,
-                             "%s.shadow_matrix", light->name);
+                      "%s.shadow_matrix", light->name);
     if (retval >= max_unif_name || retval < 0){
         err_print("snprintf error");
         return LIGHT_ERR;

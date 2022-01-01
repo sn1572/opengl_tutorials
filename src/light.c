@@ -3,37 +3,41 @@
 
 light_error_t light_init(Light * light)
 {
-    if (light){
-        light->name = NULL;
-        light->position[0] = 0.f;
-        light->position[1] = 0.f;
-        light->position[2] = 0.f;
-        light->direction[0] = 0.f;
-        light->direction[1] = 0.f;
-        light->direction[2] = 0.f;
-        light->ambient[0] = 0.f;
-        light->ambient[1] = 0.f;
-        light->ambient[2] = 0.f;
-        light->diffuse[0] = 0.f;
-        light->diffuse[1] = 0.f;
-        light->diffuse[2] = 0.f;
-        light->specular[0] = 0.f;
-        light->specular[1] = 0.f;
-        light->specular[2] = 0.f;
-        light->theta_min = 0.5f;
-        light->theta_taper_start = 0.6f;
-        light->constant = 1.0f;
-        light->linear = 0.07f;
-        light->quadratic = 0.017f;
-        light->depth_FBO = 0;
-        light->depth_texture = 0;
-        light->shadow_width = 1024;
-        light->shadow_height = 1024;
-        return LIGHT_SUCCESS;
-    } else{
+    mat4x4 zeros = {{0.f, 0.f, 0.f, 0.f},
+                    {0.f, 0.f, 0.f, 0.f},
+                    {0.f, 0.f, 0.f, 0.f},
+                    {0.f, 0.f, 0.f, 0.f}};
+    if (!light){
         err_print("Attempting to initialize unallocated pointer");
         return LIGHT_ERR;
     }
+    light->name = NULL;
+    light->position[0] = 0.f;
+    light->position[1] = 0.f;
+    light->position[2] = 0.f;
+    light->direction[0] = 0.f;
+    light->direction[1] = 0.f;
+    light->direction[2] = 0.f;
+    light->ambient[0] = 0.f;
+    light->ambient[1] = 0.f;
+    light->ambient[2] = 0.f;
+    light->diffuse[0] = 0.f;
+    light->diffuse[1] = 0.f;
+    light->diffuse[2] = 0.f;
+    light->specular[0] = 0.f;
+    light->specular[1] = 0.f;
+    light->specular[2] = 0.f;
+    light->theta_min = 0.5f;
+    light->theta_taper_start = 0.6f;
+    light->constant = 1.0f;
+    light->linear = 0.07f;
+    light->quadratic = 0.017f;
+    light->depth_FBO = 0;
+    light->depth_texture = 0;
+    light->shadow_width = 1024;
+    light->shadow_height = 1024;
+    mat4x4_dup(light->shadow_matrix, zeros);
+    return LIGHT_SUCCESS;
 }
 
 
@@ -124,6 +128,14 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     }
     setFloat(shader, uniform_name, light->quadratic);
 
+    retval = snprintf(uniform_name, max_unif_name,
+                             "%s.shadow_matrix", light->name);
+    if (retval >= max_unif_name || retval < 0){
+        err_print("snprintf error");
+        return LIGHT_ERR;
+    }
+    setMat4x4(shader, uniform_name, light->shadow_matrix);
+
     return LIGHT_SUCCESS;
 }
 
@@ -146,5 +158,24 @@ light_error_t light_shadow_gl_init(Light * light)
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return LIGHT_SUCCESS;
 }
 
+
+light_error_t light_shadow_mat_directional(Light * light, vec3 center, vec3 up,
+                                           float near_plane, float far_plane,
+                                           vec4 ortho_params)
+{
+    mat4x4 look_at;
+    mat4x4 ortho;
+
+    if (!light){
+        err_print("light unallocated");
+        return LIGHT_ERR;
+    }
+    mat4x4_look_at(look_at, light->position, center, up);
+    mat4x4_ortho(ortho, ortho_params[0], ortho_params[1], ortho_params[2],
+                 ortho_params[3], near_plane, far_plane);
+    mat4x4_mul(light->shadow_matrix, ortho, look_at);
+    return LIGHT_SUCCESS;
+}

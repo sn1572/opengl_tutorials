@@ -184,6 +184,40 @@ shader_err_t setVec3(struct Shader * self, const char * name, vec3 vec)
 }
 
 
+shader_err_t flatten(float * out, mat4x4 M)
+{
+    if (!out)
+        return SHADER_NULL_PTR;
+    if (!M)
+        return SHADER_NULL_PTR;
+    for (int i=0; i<4; i++){
+        for (int j=0; j<4; j++){
+            out[i*4+j] = M[i][j];
+        }
+    }
+    return SHADER_NO_ERR;
+}
+
+
+shader_err_t setMat4x4(struct Shader * shaders, const char * name,
+                       mat4x4 matrix)
+{
+    GLint loc = glGetUniformLocation(shaders->ID, name);
+    GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR){
+        fprintf(stderr, "%s %d: GL error %x\n", __FILE__, __LINE__, glError);
+        return SHADER_GL_ERR;
+    }
+    float flattened[16];
+    flatten(flattened, matrix);
+    glUniformMatrix4fv(loc, 1, GL_FALSE, flattened);
+    if (glError != GL_NO_ERROR){
+        fprintf(stderr, "%s %d: GL error %x\n", __FILE__, __LINE__, glError);
+        return SHADER_GL_ERR;
+    }
+}
+
+
 struct Shader * shaderInit()
 {
     struct Shader * out = NULL;

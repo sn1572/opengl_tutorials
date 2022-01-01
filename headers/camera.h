@@ -8,7 +8,7 @@
     #include <string.h>
     #include <stdbool.h>
     #include <linmath.h>
-    #include "shader.h"
+    #include <shader.h>
 
 
     #define toRadians(x) (M_PI*x/180)
@@ -113,8 +113,6 @@
                                     float z);
     void setActiveCameraPosition(float x, float y, float z);
     struct Camera * cameraInit(int width, int height);
-    void sendMatrixToShader(mat4x4 matrix, const char * name,
-                            struct Shader * shaders);
 
     // Camera struct functions
     void setViewMatrix(struct Camera * self, struct Shader * shaders,
@@ -130,6 +128,5 @@
 
     // Module local functions
     static void updateCameraVectors(struct Camera * self);
-    cameraError_t flatten(float * out, mat4x4 M);
 
 #endif

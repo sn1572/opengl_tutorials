@@ -27,42 +27,6 @@ void glfwCompatMouseScrollCallback(GLFWwindow * window, double xPos,
 }
 
 
-cameraError_t flatten(float * out, mat4x4 M){
-    if (!out)
-        return CAM_NULL_PTR;
-    if (!M)
-        return CAM_NULL_PTR;
-    for (int i=0; i<4; i++){
-        for (int j=0; j<4; j++){
-            out[i*4+j] = M[i][j];
-        }
-    }
-    return CAM_NO_ERR;
-}
-
-
-void sendMatrixToShader(mat4x4 matrix, const char * name,
-                        struct Shader * shaders){
-    GLint loc = glGetUniformLocation(shaders->ID, name);
-    GLenum glError = glGetError();
-    if (glError != GL_NO_ERROR){
-        fprintf(stderr, "Error in %s, line %d in file %s\n",
-                __func__, __LINE__-4, __FILE__);
-        fprintf(stderr, "GL error %x\n", glError); 
-        exit(1);
-    }
-    float flattened[16];
-    flatten(flattened, matrix);
-    glUniformMatrix4fv(loc, 1, GL_FALSE, flattened);
-    if (glError != GL_NO_ERROR){
-        fprintf(stderr, "Error in %s, line %d in file %s\n",
-                __func__, __LINE__-3, __FILE__);
-        fprintf(stderr, "GL error %x\n", glError); 
-        exit(1);
-    }
-}
-
-
 void setViewMatrix(struct Camera * self, struct Shader * shaders,
                           const char * handle){
     vec3 temp;
@@ -73,7 +37,7 @@ void setViewMatrix(struct Camera * self, struct Shader * shaders,
     }
     vec3_add(temp, *(self->position), *(self->front));
     mat4x4_look_at(view, *(self->position), temp, *(self->up));
-    sendMatrixToShader(view, handle, shaders);
+    setMat4x4(shaders, handle, view);
 }
 
 
@@ -85,7 +49,7 @@ void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
                        self->aspect,
                        self->nearClipPlane,
                        self->farClipPlane);
-    sendMatrixToShader(projection, handle, shaders);
+    setMat4x4(shaders, handle, projection);
 }
 
 

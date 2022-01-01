@@ -45,6 +45,9 @@
     shader_err_t setInt(struct Shader * self, const char * name, int value);
     shader_err_t setFloat(struct Shader * self, const char * name, float value);
     shader_err_t setVec3(struct Shader * self, const char * name, vec3 vec);
+    shader_err_t flatten(float * out, mat4x4 M);
+    shader_err_t setMat4x4(struct Shader * self, const char * name,
+                           mat4x4 matrix);
     struct Shader * shaderInit();
     shader_err_t checkCompileErrors(unsigned int shader, char * type);
     void shader_introspection(struct Shader * shaders);

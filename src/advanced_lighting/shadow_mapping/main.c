@@ -18,6 +18,8 @@
 
 static char model_frag_source[] = "shaders/model.frag";
 static char model_vert_source[] = "shaders/model.vert";
+static char depth_frag_source[] = "shaders/depth.frag";
+static char depth_vert_source[] = "shaders/depth.vert";
 static int WIDTH = 1920;
 static int HEIGHT = 1080;
 
@@ -101,11 +103,16 @@ int main(){
     }
     printf("Backpack texture count: %i\n", num_textures);
 
-    /* Shader init */
     struct Shader * model_shader = shaderInit();
     if (load(model_shader, model_vert_source,
              model_frag_source) != SHADER_NO_ERR){
-        fprintf(stderr, "model shader compilation error\n");
+        err_print("model shader compile error");
+        goto cleanup_gl;
+    }
+    struct Shader * depth_shader = shaderInit();
+    if (load(model_shader, depth_vert_source,
+             depth_frag_source) != SHADER_NO_ERR){
+        err_print("depth shader compile error");
         goto cleanup_gl;
     }
 
@@ -117,6 +124,8 @@ int main(){
 
     Light light;
     light_init(&light);
+    /* This allocates a framebuffer, texture, etc. */
+    light_shadow_gl_init(&light);
     light.name = malloc(12 * sizeof(char));
     snprintf(light.name, 12, "point_light");
     vec3 point_ambient = {0.4f, 0.4f, 0.4f};
@@ -141,6 +150,26 @@ int main(){
         // Can this be moved outside the main loop?
         glfwCompatKeyboardCallback(window);
 
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        vec4 ortho_params = {-10.f, 10.f, -10.f, 10.f};
+        light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
+                                     ortho_params);
+        use(depth_shader);
+        light_to_shader(&light, depth_shader);
+        glViewport(0, 0, light.shadow_width, light.shadow_height);
+        glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
+        /* Need to make sure the depth buffer is clear before calling
+         * draw methods with the depth shader. We cleared it above.
+         */
+        draw_model(depth_shader, backpack);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glViewport(0, 0, WIDTH, HEIGHT);
+        /* There is no color buffer in use during the depth rendering,
+         * so we only need to clear the depth buffer.
+         */
+        glClear(GL_DEPTH_BUFFER_BIT);
         use(model_shader);
         setViewMatrix(cam, model_shader, "view");
         setProjectionMatrix(cam, model_shader, "projection");
@@ -159,11 +188,6 @@ int main(){
         vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         mat4x4_mul_vec4(light_position_4, R, light_initial_position);
         vec3_dup(light.position, light_position_4);
-        /*
-        light_position[0] = light_position_4[0];
-        light_position[1] = light_position_4[1];
-        light_position[2] = light_position_4[2];
-        */
         setFloat(model_shader, "material.shininess", 4.f);
         light_to_shader(&light, model_shader);
         draw_model(model_shader, backpack);

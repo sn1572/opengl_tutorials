@@ -547,3 +547,16 @@ void append_texture_node(Model * model, Texture_Node * new_node)
     }
     current_node->next = new_node;
 }
+
+
+int num_textures(Model * model)
+{
+    int count = 0;
+    Texture_Node * current = model->loaded_textures;
+
+    while (current){
+        current = current->next;
+        count++;
+    }
+    return count;
+}

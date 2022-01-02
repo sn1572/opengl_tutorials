@@ -156,6 +156,8 @@ int main(){
         light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
                                      ortho_params);
         use(depth_shader);
+        glActiveTexture(GL_TEXTURE0);
+        setInt(depth_shader, "light.depth_texture", 0);
         light_to_shader(&light, depth_shader);
         glViewport(0, 0, light.shadow_width, light.shadow_height);
         glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
@@ -163,8 +165,8 @@ int main(){
          * draw methods with the depth shader. We cleared it above.
          */
         draw_model(depth_shader, backpack);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, WIDTH, HEIGHT);
         /* There is no color buffer in use during the depth rendering,
          * so we only need to clear the depth buffer.
@@ -177,6 +179,17 @@ int main(){
         mat4x4_identity(normal_matrix);
         sendMatrixToShader(model_matrix, "model_matrix", model_shader);
         sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
+        /* Binding the light's depth texture */
+        int max_texture_units;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
+        int texture_unit = num_textures(model);
+        if (texture_unit < max_texture_units){
+            glActiveTexture(GL_TEXTURE0 + texture_unit);
+            setInt(model_shader, "light.depth_texture", texture_unit);
+            glBindTexture(GL_TEXTURE_2D, light.depth_texture);
+        } else{
+            err_print("Not enough texture units. omg");
+        }
 
         /* apply point light effects */
         vec4 light_position_4;

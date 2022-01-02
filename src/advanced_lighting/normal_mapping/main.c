@@ -138,8 +138,8 @@ int main(){
         setProjectionMatrix(cam, model_shader, "projection");
         mat4x4_identity(model_matrix);
         mat4x4_identity(normal_matrix);
-        sendMatrixToShader(model_matrix, "model_matrix", model_shader);
-        sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
+        setMat4x4(model_shader, "model_matrix", model_matrix);
+        setMat4x4(model_shader, "normal_matrix", normal_matrix);
 
         /* apply point light effects */
         vec3 point_ambient = {0.4f, 0.4f, 0.4f};

@@ -94,4 +94,5 @@
     void free_mesh(Mesh * mesh);
     void free_model(Model * model);
     void append_texture_node(Model * model, Texture_Node * new_node);
+    int num_textures(Model * model);
 #endif

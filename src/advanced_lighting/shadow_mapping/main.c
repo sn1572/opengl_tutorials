@@ -198,7 +198,7 @@ int main(){
         numFrames += 1;
         time = (float)glfwGetTime();
 
-        glClearColor(0.f, 0.f, 0.f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Can this be moved outside the main loop?
@@ -207,11 +207,11 @@ int main(){
         /* Parameters shared by all shaders */
         vec4 light_position_4;
         vec3 light_position;
+        vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         mat4x4 R;
         mat4x4_identity(R);
         float angle = time*50*M_PI/180;
         mat4x4_rotate(R, R, 0.f, 1.f, 0.f, angle);
-        vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         mat4x4_mul_vec4(light_position_4, R, light_initial_position);
         vec3_dup(light.position, light_position_4);
         mat4x4_identity(model_matrix);
@@ -221,7 +221,14 @@ int main(){
         /* Apparently this is the point the camera is rotating around. */
         vec3 center = {0.f, 0.f, -1.f};
         vec3 up = {0.f, 1.f, 0.f};
-        vec4 ortho_params = {-10.f, 10.f, -10.f, 10.f};
+        /* The larger this is, the smaller the model appears.
+         * In other words turn this down to increase shadow resolution
+         * on the backpack. Bear in mind the cost is that the scope
+         * of the scene captured is reduced.
+         */
+        float ortho_mag = 4.f;
+        vec4 ortho_params = {-1.f, 1.f, -1.f, 1.f};
+        vec4_scale(ortho_params, ortho_params, ortho_mag);
         light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
                                      ortho_params);
         glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);

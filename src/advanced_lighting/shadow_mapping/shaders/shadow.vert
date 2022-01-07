@@ -1,4 +1,4 @@
-#version 450 core
+#version 400 core
 
 layout (location=0) in vec3 in_position;
 layout (location=1) in vec3 in_normal;
@@ -26,6 +26,7 @@ struct Light {
     float linear;            //point light
     float quadratic;         //point light
     mat4 shadow_matrix;
+    sampler2D depth_texture;
 };
 
 uniform mat4 projection;

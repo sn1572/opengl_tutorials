@@ -24,6 +24,7 @@ struct Light {
     float constant;          //point light
     float linear;            //point light
     float quadratic;         //point light
+    sampler2D depth_texture;
 };
 
 uniform mat4 projection;

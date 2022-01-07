@@ -154,6 +154,7 @@ int main(){
         light_position[0] = light_position_4[0];
         light_position[1] = light_position_4[1];
         light_position[2] = light_position_4[2];
+        // Can use vec3_dup(light_position, light_position_4);
         setVec3(model_shader, "point_light.position", light_position);
         setVec3(model_shader, "point_light.ambient", point_ambient);
         setVec3(model_shader, "point_light.specular", point_specular);

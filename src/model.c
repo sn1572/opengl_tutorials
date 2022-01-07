@@ -119,6 +119,15 @@ model_error_t draw_mesh(Shader * shader, Mesh mesh)
                 return MODEL_ERR;
         }
         setInt(shader, name, i);
+        /* GL_TEXTURE_2D is a target for the bound texture unit. Texture
+         * unit is selected in the above call to glActiveTexture. So
+         * we are binding the texture at mesh.textures[i] to the 2d
+         * texture target of texture unit i.
+         *
+         * setInt then instructs the shader that material.texture_whatever
+         * is to be drawn from texture unit i (and presumably sampler2D
+         * is used to inform the shader to read from the 2D target).
+         */
         glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
@@ -549,10 +558,10 @@ void append_texture_node(Model * model, Texture_Node * new_node)
 }
 
 
-int num_textures(Model * model)
+int cached_texture_count(Model model)
 {
     int count = 0;
-    Texture_Node * current = model->loaded_textures;
+    Texture_Node * current = model.loaded_textures;
 
     while (current){
         current = current->next;

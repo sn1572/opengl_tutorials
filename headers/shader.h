@@ -7,11 +7,11 @@
     #include "linmath.h"
 
     typedef enum {
-        SHADER_NO_ERR,
-        SHADER_NULL_PTR,
-        SHADER_GL_ERR,
-        SHADER_NO_MEM,
-        SHADER_FS_ERR,
+        SHADER_NO_ERR   =  0,
+        SHADER_NULL_PTR = -1,
+        SHADER_GL_ERR   = -2,
+        SHADER_NO_MEM   = -3,
+        SHADER_FS_ERR   = -4,
     } shader_err_t;
 
     #ifndef err_print

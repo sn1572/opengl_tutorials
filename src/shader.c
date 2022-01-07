@@ -15,8 +15,9 @@
 
 #ifdef SHADER_DEBUG
 #define gl_err_check_no_goto() do {\
-    if (glGetError() != GL_NO_ERROR){\
-        err_print("GL err\n");\
+    GLenum glError = glGetError();\
+    if (glError != GL_NO_ERROR){\
+        fprintf(stderr, "%s %d: GL error %x\n", __FILE__, __LINE__, glError);\
         result = SHADER_GL_ERR;\
     }} while(0)
 #else
@@ -240,7 +241,7 @@ struct Shader * shaderInit()
 shader_err_t checkCompileErrors(unsigned int shader, char * type)
 {
     int success;
-    char infoLog[1024];
+    char infoLog[2048];
     if (type != "PROGRAM"){
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success){
@@ -253,7 +254,7 @@ shader_err_t checkCompileErrors(unsigned int shader, char * type)
     else{
         glGetProgramiv(shader, GL_LINK_STATUS, &success);
         if (!success){
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            glGetProgramInfoLog(shader, 2048, NULL, infoLog);
             fprintf(stderr, "PROGRAM_LINKING_ERROR of type: %s\n%s\n",
                     type, infoLog);
             return SHADER_GL_ERR;
@@ -274,7 +275,7 @@ void shader_introspection(struct Shader * shader)
     GLint count;
     GLint size;
     GLenum type;
-    const GLsizei bufSize = 16;
+    const GLsizei bufSize = 128;
     GLchar name[bufSize];
     GLsizei length;
     GLint program_valid = 0;

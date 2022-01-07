@@ -15,13 +15,42 @@
 #define SUCCESS 0;
 #define FAILURE 1;
 
+#define GL_ERR_CHECK do{\
+    GLenum glError = glGetError();\
+    if (glError != GL_NO_ERROR){\
+        fprintf(stderr, "%s %d: GL error %x\n", __FILE__, __LINE__,\
+                glError);\
+    }\
+} while (0)
 
-static char model_frag_source[] = "shaders/model.frag";
-static char model_vert_source[] = "shaders/model.vert";
+#define DECLARE_SHADER(name, vert_src, frag_src) do{\
+    struct Shader * name = shaderInit();\
+    if (load(name, frag_src, vert_src) != SHADER_NO_ERR){\
+        err_print("shader compile error");\
+        goto cleanup_gl;\
+    }\
+} while (0)
+
+
+static char model_frag_source[] = "shaders/shadow.frag";
+static char model_vert_source[] = "shaders/shadow.vert";
 static char depth_frag_source[] = "shaders/depth.frag";
 static char depth_vert_source[] = "shaders/depth.vert";
+static char texture_frag_source[] = "shaders/texture_render.frag";
+static char texture_vert_source[] = "shaders/texture_render.vert";
 static int WIDTH = 1920;
 static int HEIGHT = 1080;
+
+
+static const float quad_data[] = {
+    //positions           texture coordinates
+	 1.f,  1.f,  0.0f,  1.0f,  1.0f,
+	 1.f, -1.f,  0.0f,  1.0f,  0.0f,
+	-1.f, -1.f,  0.0f,  0.0f,  0.0f,
+    -1.f, -1.f,  0.f,   0.0f,  0.0f,
+    -1.f,  1.f,  0.f,   0.0f,  1.0f,
+	 1.f,  1.f,  0.0f,  1.0f,  1.0f
+};
 
 
 void print_array(float * array, int rows, int cols){
@@ -77,12 +106,6 @@ int main(){
     // set default window size
     glViewport(0, 0, WIDTH, HEIGHT);
 
-    /* model loading
-     * Eventually this will need to have its own thread to prevent
-     * application non-responsiveness. To do that we probably need to
-     * pull out the opengl calls.
-     */
-
     Model backpack;
     backpack.file_path = model_path;
     backpack.meshes = NULL;
@@ -109,10 +132,17 @@ int main(){
         err_print("model shader compile error");
         goto cleanup_gl;
     }
+    //DECLARE_SHADER(model_shader, model_vert_source, model_frag_source);
     struct Shader * depth_shader = shaderInit();
-    if (load(model_shader, depth_vert_source,
+    if (load(depth_shader, depth_vert_source,
              depth_frag_source) != SHADER_NO_ERR){
         err_print("depth shader compile error");
+        goto cleanup_gl;
+    }
+    struct Shader * texture_render = shaderInit();
+    if (load(texture_render, texture_vert_source,
+             texture_frag_source) != SHADER_NO_ERR){
+        err_print("texture render shader compile error");
         goto cleanup_gl;
     }
 
@@ -141,57 +171,35 @@ int main(){
     /* Turn on depth testing before drawing anything */
     glEnable(GL_DEPTH_TEST);
 
+    #ifdef DRAW_DEPTH_MAP
+    unsigned int plane_vao;
+    glGenVertexArrays(1, &plane_vao);
+    glBindVertexArray(plane_vao);
+    unsigned int plane_vbo;
+    glGenBuffers(1, &plane_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_data), quad_data,
+                 GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                          (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                          (void *)(3 * sizeof(float)));
+    glBindVertexArray(0);
+    #endif
+
     while (!glfwWindowShouldClose(window)){
         numFrames += 1;
         time = (float)glfwGetTime();
 
         glClearColor(0.f, 0.f, 0.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // Can this be moved outside the main loop?
         glfwCompatKeyboardCallback(window);
 
-        vec3 center = {0.f, 0.f, 0.f};
-        vec3 up = {0.f, 1.f, 0.f};
-        vec4 ortho_params = {-10.f, 10.f, -10.f, 10.f};
-        light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
-                                     ortho_params);
-        use(depth_shader);
-        glActiveTexture(GL_TEXTURE0);
-        setInt(depth_shader, "light.depth_texture", 0);
-        light_to_shader(&light, depth_shader);
-        glViewport(0, 0, light.shadow_width, light.shadow_height);
-        glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
-        /* Need to make sure the depth buffer is clear before calling
-         * draw methods with the depth shader. We cleared it above.
-         */
-        draw_model(depth_shader, backpack);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, WIDTH, HEIGHT);
-        /* There is no color buffer in use during the depth rendering,
-         * so we only need to clear the depth buffer.
-         */
-        glClear(GL_DEPTH_BUFFER_BIT);
-        use(model_shader);
-        setViewMatrix(cam, model_shader, "view");
-        setProjectionMatrix(cam, model_shader, "projection");
-        mat4x4_identity(model_matrix);
-        mat4x4_identity(normal_matrix);
-        sendMatrixToShader(model_matrix, "model_matrix", model_shader);
-        sendMatrixToShader(normal_matrix, "normal_matrix", model_shader);
-        /* Binding the light's depth texture */
-        int max_texture_units;
-        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
-        int texture_unit = num_textures(model);
-        if (texture_unit < max_texture_units){
-            glActiveTexture(GL_TEXTURE0 + texture_unit);
-            setInt(model_shader, "light.depth_texture", texture_unit);
-            glBindTexture(GL_TEXTURE_2D, light.depth_texture);
-        } else{
-            err_print("Not enough texture units. omg");
-        }
-
-        /* apply point light effects */
+        /* Parameters shared by all shaders */
         vec4 light_position_4;
         vec3 light_position;
         mat4x4 R;
@@ -201,12 +209,77 @@ int main(){
         vec4 light_initial_position = {4.f, 0.f, 0.f, 0.f};
         mat4x4_mul_vec4(light_position_4, R, light_initial_position);
         vec3_dup(light.position, light_position_4);
+        mat4x4_identity(model_matrix);
+        mat4x4_identity(normal_matrix);
+
+        /* depth mapping */
+        /* Apparently this is the point the camera is rotating around. */
+        vec3 center = {0.f, 0.f, -1.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        vec4 ortho_params = {-10.f, 10.f, -10.f, 10.f};
+        light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
+                                     ortho_params);
+        glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        use(depth_shader);
+        setMat4x4(depth_shader, "light_space_matrix", light.shadow_matrix);
+        setMat4x4(depth_shader, "model_matrix", model_matrix);
+        glViewport(0, 0, light.shadow_width, light.shadow_height);
+        GL_ERR_CHECK;
+        model_error_t draw_result;
+        if (draw_result = draw_model(depth_shader, backpack)){
+            err_print("failure drawing with depth shader");
+            fprintf(stderr, "Error code: %x\n", draw_result);
+            goto cleanup_gl;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, WIDTH, HEIGHT);
+
+        #ifdef DRAW_DEPTH_MAP
+        shader_err_t result;
+        GL_ERR_CHECK;
+        result = use(texture_render);
+        if (result != SHADER_NO_ERR){
+            err_print("Error using texture_render");
+            goto cleanup_gl;
+        }
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, light.depth_texture);
+        //glBindTexture(GL_TEXTURE_2D, backpack.loaded_textures->texture.id);
+        setInt(texture_render, "texture_to_render", 0);
+        glBindVertexArray(plane_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        #else
+        use(model_shader);
+        setViewMatrix(cam, model_shader, "view");
+        setProjectionMatrix(cam, model_shader, "projection");
+        setMat4x4(model_shader, "model_matrix", model_matrix);
+        setMat4x4(model_shader, "normal_matrix", normal_matrix);
+        int max_texture_units;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
+        int texture_unit = cached_texture_count(backpack);
+        if (texture_unit < max_texture_units){
+            glActiveTexture(GL_TEXTURE0 + texture_unit);
+            glBindTexture(GL_TEXTURE_2D, light.depth_texture);
+            setInt(model_shader, "point_light.depth_texture", texture_unit);
+        } else{
+            err_print("Not enough texture units. omg");
+        }
+
         setFloat(model_shader, "material.shininess", 4.f);
         light_to_shader(&light, model_shader);
         draw_model(model_shader, backpack);
+        #endif
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+        if (glGetError() != GL_NO_ERROR){
+            glfwSetWindowShouldClose(window, 1);
+            err_print("GL error detected. Bailing out.");
+        }
     }
     time = (float)glfwGetTime();
     printf("Rendered %i frames in %1.10f seconds amounting to %f FPS.\n",

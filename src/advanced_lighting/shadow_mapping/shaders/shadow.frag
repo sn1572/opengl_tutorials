@@ -1,4 +1,4 @@
-#version 450 core
+#version 400 core
 
 
 in vec3 fragment_position;
@@ -34,8 +34,8 @@ struct Light {
 };
 
 uniform Material material;
-uniform Light point_light;
 uniform vec3 camera_position;
+uniform Light point_light;
 const float pi  = 3.14159265;
 const float ksh = 16.0;
 
@@ -104,7 +104,7 @@ vec3 calc_point_light(Light light, vec3 fragment_position)
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
-    float shadow = shadow_calculation(shadow_position);
+    float shadow = shadow_calculation(light, shadow_position);
     ambient *= attenuation;
     diffuse *= (1.0 - shadow) * attenuation;
     specular *= (1.0 - shadow) * attenuation;

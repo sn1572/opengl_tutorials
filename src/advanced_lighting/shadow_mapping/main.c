@@ -23,13 +23,13 @@
     }\
 } while (0)
 
-#define DECLARE_SHADER(name, vert_src, frag_src) do{\
+#define DECLARE_SHADER(name, vert_src, frag_src) {\
     struct Shader * name = shaderInit();\
     if (load(name, frag_src, vert_src) != SHADER_NO_ERR){\
         err_print("shader compile error");\
         goto cleanup_gl;\
     }\
-} while (0)
+}
 
 
 static char model_frag_source[] = "shaders/shadow.frag";
@@ -132,7 +132,7 @@ int main(){
         err_print("model shader compile error");
         goto cleanup_gl;
     }
-    //DECLARE_SHADER(model_shader, model_vert_source, model_frag_source);
+    //DECLARE_SHADER(model_shader, model_vert_source, model_frag_source)
     struct Shader * depth_shader = shaderInit();
     if (load(depth_shader, depth_vert_source,
              depth_frag_source) != SHADER_NO_ERR){
@@ -154,6 +154,11 @@ int main(){
 
     Light light;
     light_init(&light);
+    /* Set the shadow texture resolution before the gl init call. 
+     * Don't change it after that.
+     */
+    light.shadow_width = 4096;
+    light.shadow_height = 4096;
     /* This allocates a framebuffer, texture, etc. */
     light_shadow_gl_init(&light);
     light.name = malloc(12 * sizeof(char));

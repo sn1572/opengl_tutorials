@@ -157,8 +157,8 @@ int main(){
     /* Set the shadow texture resolution before the gl init call. 
      * Don't change it after that.
      */
-    light.shadow_width = 4096;
-    light.shadow_height = 4096;
+    light.shadow_width = 2048;
+    light.shadow_height = 2048;
     /* This allocates a framebuffer, texture, etc. */
     light_shadow_gl_init(&light);
     light.name = malloc(12 * sizeof(char));
@@ -226,6 +226,7 @@ int main(){
                                      ortho_params);
         glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_FRONT);
         use(depth_shader);
         setMat4x4(depth_shader, "light_space_matrix", light.shadow_matrix);
         setMat4x4(depth_shader, "model_matrix", model_matrix);
@@ -240,7 +241,11 @@ int main(){
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
+        /* If window resizeable, need to save and re-use current width
+         * and height.
+         */
         glViewport(0, 0, WIDTH, HEIGHT);
+        glCullFace(GL_BACK);
 
         #ifdef DRAW_DEPTH_MAP
         shader_err_t result;

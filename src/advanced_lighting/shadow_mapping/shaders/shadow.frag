@@ -69,7 +69,7 @@ float shadow_calculation(Light light, vec4 shadow_position)
     projected_coordinates = projected_coordinates * 0.5 + vec3(0.5);
     float closest_depth = texture(light.depth_texture,
                                   projected_coordinates.xy).r;
-    float bias_max = 0.05, bias_min = 0.005;
+    float bias_max = 0.01, bias_min = 0.001;
     float bias = max(bias_max * (1.0 - dot(normal, light_direction)), bias_min);
     float current_depth = projected_coordinates.z;
     float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;

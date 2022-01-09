@@ -157,8 +157,8 @@ int main(){
     /* Set the shadow texture resolution before the gl init call. 
      * Don't change it after that.
      */
-    light.shadow_width = 2048;
-    light.shadow_height = 2048;
+    light.shadow_width = 1024;
+    light.shadow_height = 1024;
     /* This allocates a framebuffer, texture, etc. */
     light_shadow_gl_init(&light);
     light.name = malloc(12 * sizeof(char));

@@ -83,6 +83,53 @@ float shadow_calculation(Light light, vec4 shadow_position)
 }
 
 
+float shadow_calculation_upsampled(Light light, vec4 shadow_position)
+{
+    vec3 projected_coordinates = shadow_position.xyz / shadow_position.w;
+    projected_coordinates = projected_coordinates * 0.5 + vec3(0.5);
+    float shadow = 0.f;
+    vec2 texel_size = 1.0 / textureSize(light.depth_texture, 0);
+    float bias_max = 0.01, bias_min = 0.001;
+    float bias = max(bias_max * (1.0 - dot(normal, light_direction)),
+                     bias_min);
+    vec2 texel_corner = floor(projected_coordinates.xy / texel_size) \
+                              / textureSize(light.depth_texture, 0);
+    vec2 distance = projected_coordinates.xy - texel_corner;
+    float upsample_factor = 10;
+    vec2 indices = floor(upsample_factor * distance - 1);
+    float upsampled_depth = texture(light.depth_texture,
+                                    projected_coordinates.xy \
+                                    + indices * texel_size).r;
+    if (projected_coordinates.z > 1.0){
+        shadow = 0.0;
+    } else {
+        shadow = projected_coordinates.z - bias > upsampled_depth ? 1.0 : 0.0;
+    }
+    return shadow;
+}
+
+
+float shadow_calculation_pcf(Light light, vec4 shadow_position)
+{
+    vec3 projected_coordinates = shadow_position.xyz / shadow_position.w;
+    projected_coordinates = projected_coordinates * 0.5 + vec3(0.5);
+    float shadow = 0.f;
+    vec2 texel_size = 1.0 / textureSize(light.depth_texture, 0);
+    float bias_max = 0.01, bias_min = 0.001;
+    float bias = max(bias_max * (1.0 - dot(normal, light_direction)),
+                     bias_min);
+    for (int x = -1; x <= 1; x++){
+        for (int y = -1; y <= 1; y++){
+            float pcf_depth = texture(light.depth_texture,
+                                      projected_coordinates.xy \
+                                      + vec2(x,y) * texel_size).r;
+            shadow += projected_coordinates.z - bias > pcf_depth ? 1.0 : 0.0;
+        }
+    }
+    return shadow /= 9.0;
+}
+
+
 vec3 calc_point_light(Light light, vec3 fragment_position)
 {
     float shininess_correction;
@@ -112,7 +159,7 @@ vec3 calc_point_light(Light light, vec3 fragment_position)
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
-    float shadow = shadow_calculation(light, shadow_position);
+    float shadow = shadow_calculation_upsampled(light, shadow_position);
     ambient *= attenuation;
     diffuse *= (1.0 - shadow) * attenuation;
     specular *= (1.0 - shadow) * attenuation;

@@ -28,5 +28,5 @@ $(binaries): %: %.c $(libs)
 .PHONY: clean
 
 clean:
-	rm *.o
+	rm -f *.o
 	cd ../../ && $(MAKE) clean

@@ -423,7 +423,9 @@ model_error_t load_material_textures(struct aiMaterial * mat,
             }
         }
         if (load_texture){
+            #ifdef DEBUG
             printf("Loading texture %s\n", file_name);
+            #endif
             if (texture_from_file(file_name, &texture_id)){
                 free(*out);
                 fprintf(stderr, "%s %d: Texture from file error.\n", __FILE__,
@@ -461,15 +463,21 @@ model_error_t texture_from_file(char * file_name, unsigned int * texture_id)
         switch(nrChannels){
             case 1:
                 format = GL_RED;
+                #ifdef DEBUG
                 printf("Format is GL_RED\n");
+                #endif
                 break;
             case 3:
                 format = GL_RGB;
+                #ifdef DEBUG
                 printf("Format is GL_RGB\n");
+                #endif
                 break;
             case 4:
                 format = GL_RGBA;
+                #ifdef DEBUG
                 printf("Format is GL_RGBA\n");
+                #endif
                 break;
             default:
                 fprintf(stderr, "%s %d: Unrecognized number of channels: %i\n",

@@ -10,6 +10,7 @@
 #include <shader.h>
 #include <model.h>
 #include <light.h>
+#include <time.h>
 
 
 #define SUCCESS 0;
@@ -30,6 +31,14 @@
         goto cleanup_gl;\
     }\
 }
+
+#define timeit(op_descr_msg) do{\
+    diff = clock() - clock_start;\
+    int msec = diff * 1000 / CLOCKS_PER_SEC;\
+    printf("Timing: %s: %d milliseconds\n", op_descr_msg,\
+            msec % 1000);\
+    clock_start = clock();\
+} while(0)
 
 
 static char model_frag_source[] = "shaders/shadow.frag";
@@ -77,8 +86,10 @@ int main(){
     char model_path[] = "../../model_loading/model/models/backpack/"
                         "backpack.obj";
     const int AA_RATE = 4;
+    clock_t clock_start, diff;
 
     /* glfw init and context creation */
+    clock_start = clock();
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -126,7 +137,6 @@ int main(){
     for (node = backpack.loaded_textures; node; node = node->next){
         num_textures += 1;
     }
-    printf("Backpack texture count: %i\n", num_textures);
 
     struct Shader * model_shader = shaderInit();
     if (load(model_shader, model_vert_source,
@@ -171,7 +181,6 @@ int main(){
     vec3_dup(light.ambient, point_ambient);
     vec3_dup(light.diffuse, point_diffuse);
     vec3_dup(light.specular, point_specular);
-    printf("Light name: %s\n", light.name);
 
     /* main loop */
     past = (float)glfwGetTime();
@@ -197,6 +206,7 @@ int main(){
     glBindVertexArray(0);
     #endif
 
+    timeit("Everything before main");
     while (!glfwWindowShouldClose(window)){
         numFrames += 1;
         time = (float)glfwGetTime();
@@ -301,7 +311,20 @@ int main(){
             err_print("GL error detected. Bailing out.");
         }
     }
-    time = (float)glfwGetTime();
+    char render_msg[256];
+    int num_chars;
+    clock_t et = clock() - clock_start;
+    printf("elapsed time: %d\n", et);
+    int et_ms = et * 1000 / CLOCKS_PER_SEC;
+    printf("clocks per second: %i\n", CLOCKS_PER_SEC);
+    printf("elapsed time: %d\n", et_ms % 1000);
+    num_chars = snprintf(render_msg, 256, "Rendered %i frames in %d "
+                                     "milliseconds amounting to %f FPS.\n",
+                                     numFrames, et_ms, 1000 * \
+                                     (numFrames / (float)et_ms));
+    timeit(render_msg);
+    time = (float)glfwGetTime() - time;
+    printf("Elapsed time according to glfw: %5.3f seconds\n", time);
     printf("Rendered %i frames in %1.10f seconds amounting to %f FPS.\n",
            numFrames, time, numFrames/time);
 

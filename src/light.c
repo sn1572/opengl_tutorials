@@ -152,6 +152,7 @@ light_error_t light_shadow_gl_init(Light * light)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     const vec3 border_color = {1.f, 1.f, 1.f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glGenFramebuffers(1, &light->depth_FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, light->depth_FBO);

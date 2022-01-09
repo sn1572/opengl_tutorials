@@ -54,7 +54,7 @@ void setProjectionMatrix(struct Camera * self, struct Shader * shaders,
 
 
 void processKeyboard(struct Camera * self, GLFWwindow * window){
-                     float deltaTime, currentTime;
+    float deltaTime, currentTime;
 
     currentTime = glfwGetTime();
     deltaTime = currentTime-(self->lastUpdateTime);

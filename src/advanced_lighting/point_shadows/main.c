@@ -211,7 +211,7 @@ int main(){
     light.shadow_width = 2048;
     light.shadow_height = 2048;
     /* This allocates a framebuffer, texture, etc. */
-    light_shadow_gl_init(&light);
+    light_shadow_cube_map_init(&light);
     light.name = malloc(12 * sizeof(char));
     snprintf(light.name, 12, "point_light");
     vec3 point_ambient = {0.4f, 0.4f, 0.4f};
@@ -259,12 +259,13 @@ int main(){
         float ortho_mag = 4.f;
         vec4 ortho_params = {-1.f, 1.f, -1.f, 1.f};
         vec4_scale(ortho_params, ortho_params, ortho_mag);
-        light_shadow_mat_directional(&light, center, up, 1.f, 7.5f,
-                                     ortho_params);
+        light_shadow_cube_mat(&light, 1.f, 7.5f);
         glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
         use(depth_shader);
+        // Sends the cube mats to the shader now
+        light_to_shader(&light, depth_shader);
         setMat4x4(depth_shader, "light_space_matrix", light.shadow_matrix);
         setMat4x4(depth_shader, "model_matrix", model_matrix);
         glViewport(0, 0, light.shadow_width, light.shadow_height);

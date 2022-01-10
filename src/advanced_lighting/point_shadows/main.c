@@ -10,7 +10,6 @@
 #include <shader.h>
 #include <model.h>
 #include <light.h>
-#include <time.h>
 
 
 #define SUCCESS 0;
@@ -23,14 +22,6 @@
                 glError);\
     }\
 } while (0)
-
-#define timeit(op_descr_msg) do{\
-    diff = clock() - clock_start;\
-    int msec = diff * 1000 / CLOCKS_PER_SEC;\
-    printf("Timing: %s: %d milliseconds\n", op_descr_msg,\
-            msec % 1000);\
-    clock_start = clock();\
-} while(0)
 
 
 static char model_frag_source[] = "shaders/shadow.frag";
@@ -109,21 +100,22 @@ int main(){
     int numFrames = 0;
     mat4x4 model_matrix;
     mat4x4 normal_matrix;
-    float past, time;
+    float time;
     char model_path[] = "../../model_loading/model/models/backpack/"
                         "backpack.obj";
     const int AA_RATE = 4;
     clock_t clock_start, diff;
 
     /* glfw init and context creation */
-    clock_start = clock();
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, AA_RATE);
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpengl", NULL,
-                                          NULL);
+    // According to the docs this should get us the highest available rate.
+    glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Trump did 9/11",
+                                          glfwGetPrimaryMonitor(), NULL);
     if (window == NULL){
         fprintf(stderr, "Failed to create a GLFW window.\n");
         status = FAILURE;
@@ -228,14 +220,10 @@ int main(){
     vec3_dup(light.diffuse, point_diffuse);
     vec3_dup(light.specular, point_specular);
 
-    /* main loop */
-    past = (float)glfwGetTime();
-    /* Turn on depth testing before drawing anything */
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
-
-    timeit("Everything before main");
     float glfw_loop_start_time = (float)glfwGetTime();
+
     while (!glfwWindowShouldClose(window)){
         numFrames += 1;
         time = (float)glfwGetTime();
@@ -340,22 +328,9 @@ int main(){
             err_print("GL error detected. Bailing out.");
         }
     }
-    char render_msg[256];
-    int num_chars;
-    clock_t et = clock() - clock_start;
-    printf("elapsed time: %d\n", et);
-    int et_ms = et * 1000 / CLOCKS_PER_SEC;
-    printf("clocks per second: %i\n", CLOCKS_PER_SEC);
-    printf("elapsed time: %d\n", et_ms % 1000);
-    num_chars = snprintf(render_msg, 256, "Rendered %i frames in %d "
-                                     "milliseconds amounting to %f FPS.\n",
-                                     numFrames, et_ms, 1000 * \
-                                     (numFrames / (float)et_ms));
-    timeit(render_msg);
     time = (float)glfwGetTime() - glfw_loop_start_time;
-    printf("Elapsed time according to glfw: %5.3f seconds\n", time);
     printf("Rendered %i frames in %1.10f seconds amounting to %f FPS.\n",
-           numFrames, time, numFrames/time);
+           numFrames, time, numFrames / time);
 
     cleanup_gl:
         free_model(&backpack);

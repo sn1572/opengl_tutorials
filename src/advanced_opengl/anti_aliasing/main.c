@@ -122,8 +122,9 @@ int main(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, AA_RATE);
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpengl", NULL,
-                                          NULL);
+    glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Trump did 9/11",
+                                          glfwGetPrimaryMonitor(), NULL);
     if (window == NULL){
         fprintf(stderr, "Failed to create a GLFW window.\n");
         status = FAILURE;

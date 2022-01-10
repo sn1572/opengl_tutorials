@@ -176,13 +176,16 @@ light_error_t light_shadow_cube_map_init(Light * light)
     glBindTexture(GL_TEXTURE_CUBE_MAP, light->depth_texture);
     for (unsigned int i = 0; i < 6; i++){
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-                     SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT,
-                     GL_FLOAT, NULL);
+                     light->shadow_width, light->shadow_height, 0,
+                     GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
+                        GL_CLAMP_TO_EDGE);
     }
 
     if (light->depth_FBO){
@@ -232,8 +235,10 @@ light_error_t light_shadow_mat_directional(Light * light, vec3 center, vec3 up,
 
 light_error_t light_shadow_cube_mat(Light * light, float near, float far)
 {
-    float aspect = (float)light->width / (float)light->height;
-    mat4x4 shadow_proj = perspective(90.f * M_PI / 180.f, aspect, near, far);
+    float aspect = (float)light->shadow_width / (float)light->shadow_height;
+    mat4x4 shadow_proj;
+    mat4x4_perspective(shadow_proj, (float)(90.f * M_PI / 180.f),
+                       aspect, near, far);
     mat4x4 look_at;
     vec3 x_dir     = {1.f, 0.f, 0.f};
     vec3 y_dir     = {0.f, 1.f, 0.f};
@@ -243,20 +248,20 @@ light_error_t light_shadow_cube_mat(Light * light, float near, float far)
 
     vec3_add(forward, light->position, x_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[0], shadow_proj, look_at);
     vec3_sub(forward, light->position, x_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[1], shadow_proj, look_at);
     vec3_add(forward, light->position, y_dir);
     mat4x4_look_at(look_at, light->position, forward, z_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[2], shadow_proj, look_at);
     vec3_sub(forward, light->position, y_dir);
     mat4x4_look_at(look_at, light->position, forward, z_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[3], shadow_proj, look_at);
     vec3_add(forward, light->position, z_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[4], shadow_proj, look_at);
     vec3_sub(forward, light->position, z_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
-    light->cube_mats[0] = shadow_proj * look_at;
+    mat4x4_mul(light->cube_mats[5], shadow_proj, look_at);
 }

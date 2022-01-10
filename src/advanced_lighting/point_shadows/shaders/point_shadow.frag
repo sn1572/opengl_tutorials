@@ -1,5 +1,7 @@
 #version 450 core
 
+in vec4 frag_pos;
+
 
 struct Material {
     sampler2D texture_diffuse1;
@@ -9,8 +11,12 @@ struct Material {
 };
 
 uniform Material material;
+uniform vec3 light_position;
+uniform float far_plane;
 
 void main()
 {
-    gl_FragDepth = gl_FragCoord.z;
+    float light_distance = length(frag_pos.xyz - light_position);
+    light_distance /= far_plane;
+    gl_FragDepth = light_distance;
 }

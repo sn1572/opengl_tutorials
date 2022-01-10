@@ -42,10 +42,10 @@
     light_error_t light_init(Light * light);
     light_error_t light_to_shader(Light * light, struct Shader * shader);
     light_error_t light_shadow_gl_init(Light * light);
-    light_error_t light_shadow_cube_map_init(Light * light)
+    light_error_t light_shadow_cube_map_init(Light * light);
     light_error_t light_shadow_mat_directional(Light * light, vec3 center,
                                                vec3 up, float near_plane,
                                                float far_plane,
                                                vec4 ortho_params);
-    light_error_t light_shadow_cube_mat(Light * light, float near, float far)
+    light_error_t light_shadow_cube_mat(Light * light, float near, float far);
 #endif

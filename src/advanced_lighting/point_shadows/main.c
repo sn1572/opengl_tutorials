@@ -24,10 +24,10 @@
 } while (0)
 
 
-static char model_frag_source[] = "shaders/shadow.frag";
-static char model_vert_source[] = "shaders/shadow.vert";
-static char depth_frag_source[] = "shaders/depth.frag";
-static char depth_vert_source[] = "shaders/depth.vert";
+static char model_frag_source[] = "shaders/model.frag";
+static char model_vert_source[] = "shaders/model.vert";
+static char depth_frag_source[] = "shaders/shadow.frag";
+static char depth_vert_source[] = "shaders/shadow.vert";
 static char texture_frag_source[] = "shaders/texture_render.frag";
 static char texture_vert_source[] = "shaders/texture_render.vert";
 static int WIDTH = 1920;

@@ -7,36 +7,28 @@ light_error_t light_init(Light * light)
                     {0.f, 0.f, 0.f, 0.f},
                     {0.f, 0.f, 0.f, 0.f},
                     {0.f, 0.f, 0.f, 0.f}};
+    vec3 zero_vec = {0.f, 0.f, 0.f};
     if (!light){
         err_print("Attempting to initialize unallocated pointer");
         return LIGHT_ERR;
     }
-    light->name = NULL;
-    light->position[0] = 0.f;
-    light->position[1] = 0.f;
-    light->position[2] = 0.f;
-    light->direction[0] = 0.f;
-    light->direction[1] = 0.f;
-    light->direction[2] = 0.f;
-    light->ambient[0] = 0.f;
-    light->ambient[1] = 0.f;
-    light->ambient[2] = 0.f;
-    light->diffuse[0] = 0.f;
-    light->diffuse[1] = 0.f;
-    light->diffuse[2] = 0.f;
-    light->specular[0] = 0.f;
-    light->specular[1] = 0.f;
-    light->specular[2] = 0.f;
-    light->theta_min = 0.5f;
+    vec3_dup(light->position,  zero_vec);
+    vec3_dup(light->direction, zero_vec);
+    vec3_dup(light->ambient,   zero_vec);
+    vec3_dup(light->diffuse,   zero_vec);
+    vec3_dup(light->specular,  zero_vec);
+    light->name              = NULL;
+    light->theta_min         = 0.5f;
     light->theta_taper_start = 0.6f;
-    light->constant = 1.0f;
-    light->linear = 0.07f;
-    light->quadratic = 0.017f;
-    light->depth_FBO = 0;
-    light->depth_texture = 0;
-    light->shadow_width = 1024;
-    light->shadow_height = 1024;
+    light->constant          = 1.0f;
+    light->linear            = 0.07f;
+    light->quadratic         = 0.017f;
+    light->depth_FBO         = 0;
+    light->depth_texture     = 0;
+    light->shadow_width      = 1024;
+    light->shadow_height     = 1024;
     mat4x4_dup(light->shadow_matrix, zeros);
+    light->cube_mats         = NULL;
     return LIGHT_SUCCESS;
 }
 
@@ -142,6 +134,10 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
 
 light_error_t light_shadow_gl_init(Light * light)
 {
+    if (light->depth_texture){
+        err_print("depth texture is not 0");
+        return LIGHT_ERR;
+    }
     glGenTextures(1, &light->depth_texture);
     glBindTexture(GL_TEXTURE_2D, light->depth_texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, light->shadow_width,
@@ -154,6 +150,10 @@ light_error_t light_shadow_gl_init(Light * light)
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    if (light->depth_FBO){
+        err_print("depth FBO is not 0");
+        return LIGHT_ERR;
+    }
     glGenFramebuffers(1, &light->depth_FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, light->depth_FBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
@@ -162,6 +162,52 @@ light_error_t light_shadow_gl_init(Light * light)
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return LIGHT_SUCCESS;
+}
+
+
+light_error_t light_shadow_cube_map_init(Light * light)
+{
+    light_error_t result = LIGHT_SUCCESS;
+    if (light->depth_texture){
+        err_print("depth texture is not 0");
+        result = LIGHT_ERR;
+    }
+    glGenTextures(1, &light->depth_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, light->depth_texture);
+    for (unsigned int i = 0; i < 6; i++){
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+                     SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT,
+                     GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_R, GL_CLAMP_TO_EDGE);
+    }
+
+    if (light->depth_FBO){
+        err_print("depth FBO is not 0");
+        result = LIGHT_ERR;
+    }
+    glGenFramebuffers(1, &light->depth_FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, light->depth_FBO);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                         light->depth_texture, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (light->cube_mats){
+        err_print("cube_mats is not NULL");
+        result = LIGHT_ERR;
+    }
+    light->cube_mats = malloc(6 * sizeof(mat4x4));
+    if (!light->cube_mats){
+        err_print("Out of memory");
+        result = LIGHT_ERR;
+    }
+
+    return result;
 }
 
 
@@ -181,4 +227,36 @@ light_error_t light_shadow_mat_directional(Light * light, vec3 center, vec3 up,
                  ortho_params[3], near_plane, far_plane);
     mat4x4_mul(light->shadow_matrix, ortho, look_at);
     return LIGHT_SUCCESS;
+}
+
+
+light_error_t light_shadow_cube_mat(Light * light, float near, float far)
+{
+    float aspect = (float)light->width / (float)light->height;
+    mat4x4 shadow_proj = perspective(90.f * M_PI / 180.f, aspect, near, far);
+    mat4x4 look_at;
+    vec3 x_dir     = {1.f, 0.f, 0.f};
+    vec3 y_dir     = {0.f, 1.f, 0.f};
+    vec3 neg_y_dir = {0.f, -1.f, 0.f};
+    vec3 z_dir     = {0.f, 0.f, 1.f};
+    vec3 forward, up;
+
+    vec3_add(forward, light->position, x_dir);
+    mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
+    vec3_sub(forward, light->position, x_dir);
+    mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
+    vec3_add(forward, light->position, y_dir);
+    mat4x4_look_at(look_at, light->position, forward, z_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
+    vec3_sub(forward, light->position, y_dir);
+    mat4x4_look_at(look_at, light->position, forward, z_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
+    vec3_add(forward, light->position, z_dir);
+    mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
+    vec3_sub(forward, light->position, z_dir);
+    mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
+    light->cube_mats[0] = shadow_proj * look_at;
 }

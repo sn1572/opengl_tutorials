@@ -34,15 +34,18 @@
         unsigned int shadow_width;  //shadows
         unsigned int shadow_height; //shadows
         mat4x4 shadow_matrix;       //shadows
+        mat4x4 * cube_mats;         //Cube matices.
+                                    //in order: +x, -x, +y, -y, +z, -z
     };
     typedef struct Light Light;
 
     light_error_t light_init(Light * light);
     light_error_t light_to_shader(Light * light, struct Shader * shader);
     light_error_t light_shadow_gl_init(Light * light);
+    light_error_t light_shadow_cube_map_init(Light * light)
     light_error_t light_shadow_mat_directional(Light * light, vec3 center,
                                                vec3 up, float near_plane,
                                                float far_plane,
                                                vec4 ortho_params);
-
+    light_error_t light_shadow_cube_mat(Light * light, float near, float far)
 #endif

@@ -40,6 +40,8 @@
     shader_err_t readFile(const char * fname, char ** buffer);
     shader_err_t load(struct Shader * self, char * vertexPath,
                       char * fragmentPath);
+    shader_err_t shaderLoad(struct Shader * self, char * vertexPath,
+                            char * fragmentPath, char * geomPath);
     shader_err_t use(struct Shader * self);
     shader_err_t setBool(struct Shader * self, const char * name, int value);
     shader_err_t setInt(struct Shader * self, const char * name, int value);

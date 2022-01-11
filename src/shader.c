@@ -64,9 +64,18 @@ shader_err_t readFile(const char * fname, char ** buffer)
 
 shader_err_t load(struct Shader * self, char * vertexPath, char * fragmentPath)
 {
+    //"Legacy" compatibility
+    return shaderLoad(self, vertexPath, fragmentPath, NULL);
+}
+
+
+shader_err_t shaderLoad(struct Shader * self, char * vertexPath,
+                        char * fragmentPath, char * geomPath)
+{
     char * vertexSource = NULL;
     char * fragmentSource = NULL;
-    unsigned int vertex, fragment;
+    char * geomSource = NULL;
+    unsigned int vertex, fragment, geometry;
     shader_err_t result = SHADER_NO_ERR;
 
     result = readFile(vertexPath, &vertexSource);
@@ -85,17 +94,28 @@ shader_err_t load(struct Shader * self, char * vertexPath, char * fragmentPath)
         result = SHADER_NULL_PTR;
         goto free_1;
     }
+    if (geomPath){
+        result = readFile(geomPath, &geomSource);
+        if (result != SHADER_NO_ERR){
+            goto free_2;
+        }
+        if (!(geomSource)){
+            err_print("Geometry shader file read failure\n");
+            result = SHADER_NULL_PTR;
+            goto free_2;
+        }
+    }
 
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    gl_err_check(free_2);
+    gl_err_check(free_3);
     glShaderSource(vertex, 1, (const char **)(&vertexSource), NULL);
     gl_err_check(shader_1);
     glCompileShader(vertex);
     gl_err_check(shader_1);
     checkCompileErrors(vertex, "VERTEX");
 
-    // fragment Shader
+    // fragment shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     gl_err_check(shader_1);
     glShaderSource(fragment, 1, (const char **)(&fragmentSource), NULL);
@@ -104,34 +124,53 @@ shader_err_t load(struct Shader * self, char * vertexPath, char * fragmentPath)
     gl_err_check(shader_2);
     checkCompileErrors(fragment, "FRAGMENT");
 
+    // geometry shader
+    if (geomPath){
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        gl_err_check(shader_2);
+        glShaderSource(geometry, 1, (const char **)(&geomSource), NULL);
+        gl_err_check(shader_3);
+        glCompileShader(geometry);
+        gl_err_check(shader_3);
+        checkCompileErrors(geometry, "GEOMETRY");
+    }
+
     /* shader Program */
     GLint ID = glCreateProgram();
     #ifdef SHADER_DEBUG
     if (glGetError() != GL_NO_ERROR){
         err_print("Failed to create shader program\n");
         result = SHADER_GL_ERR;
-        goto shader_2;
+        goto shader_3;
     }
     #endif
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
+    if (geomPath)
+        glAttachShader(ID, geometry);
     glLinkProgram(ID);
     #ifdef SHADER_DEBUG
     if (checkCompileErrors(ID, "PROGRAM") != SHADER_NO_ERR){
         err_print("Shader compilation failed\n");
         result = SHADER_GL_ERR;
         glDeleteProgram(ID);
-        goto shader_2;
+        goto shader_3;
     }
     #endif
     /* The penultimate assignment. If we got here, we succeeded. */
     self->ID = ID;
 
     /* Cleanup */
+    shader_3:
+        if (geomPath)
+            glDeleteShader(geometry);
     shader_2:
         glDeleteShader(fragment);
     shader_1:
         glDeleteShader(vertex);
+    free_3:
+        if (geomPath)
+            free(geomSource);
     free_2:
         free(fragmentSource);
     free_1:

@@ -228,6 +228,7 @@ int main(){
     vec3_dup(light.ambient, point_ambient);
     vec3_dup(light.diffuse, point_diffuse);
     vec3_dup(light.specular, point_specular);
+    printf("light name: %s\n", light.name);
 
     /* main loop */
     past = (float)glfwGetTime();

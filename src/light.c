@@ -128,14 +128,16 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     }
     setMat4x4(shader, uniform_name, light->shadow_matrix);
 
-    for (int i = 0; i < 6; i++){
-        retval = snprintf(uniform_name, max_unif_name,
-                          "%s.cube_mats[%i]", light->name, i);
-        if (retval >= max_unif_name || retval < 0){
-            err_print("snprintf error");
-            return LIGHT_ERR;
+    if (light->cube_mats){
+        for (int i = 0; i < 6; i++){
+            retval = snprintf(uniform_name, max_unif_name,
+                              "%s.cube_mats[%i]", light->name, i);
+            if (retval >= max_unif_name || retval < 0){
+                err_print("snprintf error");
+                return LIGHT_ERR;
+            }
+            setMat4x4(shader, uniform_name, light->cube_mats[i]);
         }
-        setMat4x4(shader, uniform_name, light->cube_mats[i]);
     }
 
     return LIGHT_SUCCESS;

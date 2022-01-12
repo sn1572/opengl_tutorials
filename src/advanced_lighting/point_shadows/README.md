@@ -1,8 +1,8 @@
 # Usage
 
-Note: This is (currently) a bit confusing.
+This is currently too confusing.
 
-On the host side the light struct has just one texture entry called `depth_texture.` That is sometimes a regular 2D texture and sometimes a cube map. Since `depth_texture` is a GLuint (aka an address) we can safely reuse the same variable for either case.
+On the host side the light struct has just one texture entry called `depth_texture`. That is sometimes a regular 2D texture and sometimes a cube map. Since `depth_texture` is a GLuint (aka an address) we can safely reuse the same variable for either case.
 
 In the shader these two texture types are distinct, so the shader version of the light struct has *both* a sampler2D called `depth_texture` and a samplerCube called `cube_map`. The design of the light.c source is such that you either initialize the light as a directional light or as a point light (the `*_cube_map_init` version) and will return some error codes if you try to intialize both ways. Errors are thrown if various storage is already allocated or not when the init functions are called. 
 

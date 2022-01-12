@@ -18,7 +18,6 @@ $(binaries): %: %.c $(libs)
 	$(CC) -g -c -I$(glad_install_dir)/include \
 		-I$(assimp_include_dir) -I$(assimp_config_dir) \
 		-I$(headers) -o $@.o $<
-		#-I$(headers) -DDRAW_DEPTH_MAP -o $@.o $<
 
 	$(CC) -o $@ $@.o -Wl,-rpath,$(lib_dir) -L$(lib_dir) \
 		-Wl,-rpath,$(assimp_lib_dir) -L$(assimp_lib_dir) \

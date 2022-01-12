@@ -1,4 +1,4 @@
-#version 400 core
+#version 450 core
 
 
 in vec3 fragment_position;
@@ -7,9 +7,10 @@ in vec2 texture_coordinates;
 in vec3 view_direction;
 in vec3 light_direction;
 in mat3 tbn_matrix;
-in vec4 shadow_position;
+
 
 out vec4 frag_color;
+
 
 struct Material {
     sampler2D texture_diffuse1;
@@ -17,6 +18,7 @@ struct Material {
     sampler2D texture_normal1;
     float shininess;
 };
+
 
 struct Light {
     vec3 position;           //not for directional
@@ -31,11 +33,14 @@ struct Light {
     float quadratic;         //point light
     mat4 shadow_matrix;
     sampler2D depth_texture;
+    samplerCube cube_map;
 };
+
 
 uniform Material material;
 uniform vec3 camera_position;
 uniform Light point_light;
+uniform float far_plane;            //Needed for cube mat calculations
 const float pi  = 3.14159265;
 const float ksh = 16.0;
 
@@ -130,7 +135,21 @@ float shadow_calculation_pcf(Light light, vec4 shadow_position)
 }
 
 
-vec3 calc_point_light(Light light, vec3 fragment_position)
+float shadow_calculation_cube(Light light, vec3 normal)
+{
+    vec3 frag_to_light = fragment_position - light.position;
+    float closest_depth = texture(light.cube_map, frag_to_light).r;
+    closest_depth *= far_plane;
+    float bias_max = 0.01, bias_min = 0.001;
+    float bias = max(bias_max * (1.0 - dot(normal, light_direction)),
+                     bias_min);
+    float current_depth = length(frag_to_light);
+    float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+    return shadow;
+}
+
+
+vec3 calc_point_light(Light light, vec3 fragment_position, vec3 normal)
 {
     float shininess_correction;
     vec3 material_texture = texture(material.texture_diffuse1,
@@ -159,7 +178,7 @@ vec3 calc_point_light(Light light, vec3 fragment_position)
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
-    float shadow = shadow_calculation_pcf(light, shadow_position);
+    float shadow = shadow_calculation_cube(light, normal);
     ambient *= attenuation;
     diffuse *= (1.0 - shadow) * attenuation;
     specular *= (1.0 - shadow) * attenuation;
@@ -204,7 +223,8 @@ void main(){
     vec3 normalized_normal = normalize(normal);
     vec3 total;
 
-    total = calc_point_light(point_light, fragment_position);
+    total = calc_point_light(point_light, fragment_position,
+                             normalized_normal);
 	frag_color = texture(material.texture_diffuse1, texture_coordinates) * \
                  vec4(total, 1.0);
 }

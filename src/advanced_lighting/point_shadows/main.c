@@ -26,9 +26,9 @@
 
 static char model_frag_source[] = "shaders/model.frag";
 static char model_vert_source[] = "shaders/model.vert";
-static char depth_frag_source[] = "shaders/shadow.frag";
-static char depth_geom_source[] = "shaders/shadow.geom";
-static char depth_vert_source[] = "shaders/shadow.vert";
+static char depth_frag_source[] = "shaders/point_shadow.frag";
+static char depth_geom_source[] = "shaders/point_shadow.geom";
+static char depth_vert_source[] = "shaders/point_shadow.vert";
 static char texture_frag_source[] = "shaders/texture_render.frag";
 static char texture_vert_source[] = "shaders/texture_render.vert";
 static int WIDTH = 1920;
@@ -163,9 +163,9 @@ int main(){
         goto cleanup_gl;
     }
     struct Shader * depth_shader = shaderInit();
-    if (load(depth_shader, depth_vert_source,
-             depth_frag_source) != SHADER_NO_ERR){
-        err_print("depth shader compile error");
+    if (shaderLoad(depth_shader, depth_vert_source,
+                   depth_frag_source, depth_geom_source) != SHADER_NO_ERR){
+        err_print("point shadow shader compile error");
         goto cleanup_gl;
     }
     struct Shader * texture_render = shaderInit();
@@ -248,25 +248,14 @@ int main(){
         mat4x4_identity(normal_matrix);
 
         /* depth mapping */
-        /* Apparently this is the point the camera is rotating around. */
-        vec3 center = {0.f, 0.f, -1.f};
-        vec3 up = {0.f, 1.f, 0.f};
-        /* The larger this is, the smaller the model appears.
-         * In other words turn this down to increase shadow resolution
-         * on the backpack. Bear in mind the cost is that the scope
-         * of the scene captured is reduced.
-         */
-        float ortho_mag = 4.f;
-        vec4 ortho_params = {-1.f, 1.f, -1.f, 1.f};
-        vec4_scale(ortho_params, ortho_params, ortho_mag);
-        light_shadow_cube_mat(&light, 1.f, 7.5f);
+        float far_plane = 10.f;
+        light_shadow_cube_mat(&light, 1.f, far_plane);
         glBindFramebuffer(GL_FRAMEBUFFER, light.depth_FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT);
         use(depth_shader);
-        // Sends the cube mats to the shader now
         light_to_shader(&light, depth_shader);
-        setMat4x4(depth_shader, "light_space_matrix", light.shadow_matrix);
+        setFloat(depth_shader, "far_plane", far_plane);
         setMat4x4(depth_shader, "model_matrix", model_matrix);
         glViewport(0, 0, light.shadow_width, light.shadow_height);
         GL_ERR_CHECK;
@@ -277,30 +266,13 @@ int main(){
             goto cleanup_gl;
         }
 
+        /* Undo shadow configuration */
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
-        /* If window resizeable, need to save and re-use current width
-         * and height.
-         */
         glViewport(0, 0, WIDTH, HEIGHT);
         glCullFace(GL_BACK);
 
-        #ifdef DRAW_DEPTH_MAP
-        shader_err_t result;
-        GL_ERR_CHECK;
-        result = use(texture_render);
-        if (result != SHADER_NO_ERR){
-            err_print("Error using texture_render");
-            goto cleanup_gl;
-        }
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, light.depth_texture);
-        //glBindTexture(GL_TEXTURE_2D, backpack.loaded_textures->texture.id);
-        setInt(texture_render, "texture_to_render", 0);
-        glBindVertexArray(plane_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        #else
+        /* Draw model */
         use(model_shader);
         setViewMatrix(cam, model_shader, "view");
         setProjectionMatrix(cam, model_shader, "projection");
@@ -311,16 +283,32 @@ int main(){
         int texture_unit = cached_texture_count(backpack);
         if (texture_unit < max_texture_units){
             glActiveTexture(GL_TEXTURE0 + texture_unit);
-            glBindTexture(GL_TEXTURE_2D, light.depth_texture);
-            setInt(model_shader, "point_light.depth_texture", texture_unit);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, light.depth_texture);
+
         } else{
             err_print("Not enough texture units. omg");
         }
-
+        /* Note: This is a bit confusing.
+         * On the host side the light struct has just one texture entry
+         * called "depth_texture." That is sometimes a regular 2D texture
+         * and sometimes a cube map.
+         * In the shader these two texture types are distinct, so the shader
+         * version of the light struct has *both* a sampler2D called
+         * depth_texture and a samplerCube called cube_map.
+         * The design of the light.c source is such that you either
+         * initialize the light as a directional light or as a point
+         * light (the *_cube_map_init version) and will return some error
+         * codes if you try to intialize both ways.
+         * It might be wise to introduce a type describing what kind of light
+         * is contained in the struct to make sure that everything is very
+         * explicitly connected to what type of light is being used
+         * (directional vs. point_light).
+         */
+        setInt(model_shader, "point_light.cube_map", texture_unit);
         setFloat(model_shader, "material.shininess", 4.f);
+        setFloat(model_shader, "far_plane", far_plane);
         light_to_shader(&light, model_shader);
         draw_model(model_shader, backpack);
-        #endif
 
         glfwSwapBuffers(window);
         glfwPollEvents();

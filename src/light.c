@@ -129,6 +129,7 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     setMat4x4(shader, uniform_name, light->shadow_matrix);
 
     if (light->cube_mats){
+        /* This calling convention used in the geometry shader */
         for (int i = 0; i < 6; i++){
             retval = snprintf(uniform_name, max_unif_name,
                               "%s.cube_mats[%i]", light->name, i);

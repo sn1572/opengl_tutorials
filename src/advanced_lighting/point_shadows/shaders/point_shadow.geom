@@ -18,7 +18,7 @@ struct Light {
     float quadratic;         //point light
     mat4 shadow_matrix;
     sampler2D depth_texture;
-    mat4 * cube_mats;
+    mat4 cube_mats[6];
 };
 
 uniform Light point_light;

@@ -27,6 +27,7 @@ struct Light {
     float quadratic;         //point light
     mat4 shadow_matrix;
     sampler2D depth_texture;
+    samplerCube cube_map;
 };
 
 uniform mat4 projection;
@@ -50,5 +51,4 @@ void main(){
                                                 - fragment_position);
     view_direction = tbn_transpose * normalize(camera_position \
                                                - fragment_position);
-    shadow_position = point_light.shadow_matrix * vec4(fragment_position, 1.0);
 }

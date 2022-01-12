@@ -8,10 +8,12 @@ light_error_t light_init(Light * light)
                     {0.f, 0.f, 0.f, 0.f},
                     {0.f, 0.f, 0.f, 0.f}};
     vec3 zero_vec = {0.f, 0.f, 0.f};
+    #ifdef LIGHT_DEBUG
     if (!light){
-        err_print("Attempting to initialize unallocated pointer");
+        err_print("Attempting to NULL light pointer");
         return LIGHT_ERR;
     }
+    #endif
     vec3_dup(light->position,  zero_vec);
     vec3_dup(light->direction, zero_vec);
     vec3_dup(light->ambient,   zero_vec);
@@ -39,6 +41,13 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
     int max_unif_name = string_length + 20;
     char uniform_name[max_unif_name];
     int retval;
+
+    #ifdef LIGHT_DEBUG
+    if (!light){
+        err_print("Attempting to use NULL light pointer");
+        return LIGHT_ERR;
+    }
+    #endif
 
     retval = snprintf(uniform_name, max_unif_name,
                       "%s.position", light->name);
@@ -147,10 +156,17 @@ light_error_t light_to_shader(Light * light, struct Shader * shader)
 
 light_error_t light_shadow_gl_init(Light * light)
 {
+    #ifdef LIGHT_DEBUG
+    if (!light){
+        err_print("Attempting to use NULL light pointer");
+        return LIGHT_ERR;
+    }
+    #endif
     if (light->depth_texture){
         err_print("depth texture is not 0");
         return LIGHT_ERR;
     }
+
     glGenTextures(1, &light->depth_texture);
     glBindTexture(GL_TEXTURE_2D, light->depth_texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, light->shadow_width,
@@ -181,6 +197,14 @@ light_error_t light_shadow_gl_init(Light * light)
 light_error_t light_shadow_cube_map_init(Light * light)
 {
     light_error_t result = LIGHT_SUCCESS;
+
+    #ifdef LIGHT_DEBUG
+    if (!light){
+        err_print("Attemtping to use NULL light pointer");
+        return LIGHT_ERR;
+    }
+
+    #endif
     if (light->depth_texture){
         err_print("depth texture is not 0");
         result = LIGHT_ERR;
@@ -234,10 +258,13 @@ light_error_t light_shadow_mat_directional(Light * light, vec3 center, vec3 up,
     mat4x4 look_at;
     mat4x4 ortho;
 
+    #ifdef LIGHT_DEBUG
     if (!light){
         err_print("light unallocated");
         return LIGHT_ERR;
     }
+    #endif
+
     mat4x4_look_at(look_at, light->position, center, up);
     mat4x4_ortho(ortho, ortho_params[0], ortho_params[1], ortho_params[2],
                  ortho_params[3], near_plane, far_plane);
@@ -259,6 +286,17 @@ light_error_t light_shadow_cube_mat(Light * light, float near, float far)
     vec3 z_dir     = {0.f, 0.f, 1.f};
     vec3 forward, up;
 
+    #ifdef LIGHT_DEBUG
+    if (!light->cube_mats){
+        err_print("cube_mats pointer is NULL");
+        return LIGHT_ERR;
+    }
+    if (!light){
+        err_print("light pointer is NULL");
+        return LIGHT_ERR;
+    }
+    #endif
+
     vec3_add(forward, light->position, x_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
     mat4x4_mul(light->cube_mats[0], shadow_proj, look_at);
@@ -277,4 +315,5 @@ light_error_t light_shadow_cube_mat(Light * light, float near, float far)
     vec3_sub(forward, light->position, z_dir);
     mat4x4_look_at(look_at, light->position, forward, neg_y_dir);
     mat4x4_mul(light->cube_mats[5], shadow_proj, look_at);
+    return LIGHT_SUCCESS;
 }

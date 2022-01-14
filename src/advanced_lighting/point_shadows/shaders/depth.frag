@@ -50,7 +50,7 @@ float shadow_calculation_cube(Light light, vec3 normal)
     vec3 frag_to_light = fragment_position - light.position;
     float closest_depth = texture(light.cube_map, frag_to_light).r;
     closest_depth *= far_plane;
-    float bias_max = 0.01, bias_min = 0.001;
+    float bias_max = 0.05, bias_min = 0.005;
     float bias = max(bias_max * (1.0 - dot(normal, light_direction)),
                      bias_min);
     float current_depth = length(frag_to_light);
@@ -63,5 +63,7 @@ void main(){
     vec3 normalized_normal = normalize(normal);
     vec3 total;
 
-	frag_color = shadow_calculation_cube(point_light, normalized_normal);
+	frag_color = vec4(1.0 - shadow_calculation_cube(point_light,
+                                                    normalized_normal));
+    frag_color[3] = 1.0;
 }

@@ -140,7 +140,7 @@ float shadow_calculation_cube(Light light, vec3 normal)
     vec3 frag_to_light = fragment_position - light.position;
     float closest_depth = texture(light.cube_map, frag_to_light).r;
     closest_depth *= far_plane;
-    float bias_max = 0.01, bias_min = 0.001;
+    float bias_max = 0.05, bias_min = 0.005;
     float bias = max(bias_max * (1.0 - dot(normal, light_direction)),
                      bias_min);
     float current_depth = length(frag_to_light);

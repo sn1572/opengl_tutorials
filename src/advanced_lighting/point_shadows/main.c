@@ -24,7 +24,11 @@
 } while (0)
 
 
+#ifdef DRAW_DEPTH_MAP
+static char model_frag_source[] = "shaders/depth.frag";
+#else
 static char model_frag_source[] = "shaders/model.frag";
+#endif
 static char model_vert_source[] = "shaders/model.vert";
 static char depth_frag_source[] = "shaders/point_shadow.frag";
 static char depth_geom_source[] = "shaders/point_shadow.geom";

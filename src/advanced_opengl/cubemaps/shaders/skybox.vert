@@ -11,7 +11,10 @@ uniform mat4 view;
 void main()
 {
     mat4 untranslated_view;
+    vec4 position;
+
     untranslated_view = mat4(mat3(view));
     texture_coordinates = in_position;
-    gl_Position = projection * untranslated_view * vec4(in_position, 1.0);
+    position = projection * untranslated_view * vec4(in_position, 1.0);
+    gl_Position = position.xyww;
 }

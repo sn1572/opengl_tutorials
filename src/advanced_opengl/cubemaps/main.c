@@ -378,18 +378,6 @@ int main(){
         mat4x4_identity(model_matrix);
         mat4x4_identity(normal_matrix);
 
-        /* skybox */
-        glDepthMask(GL_FALSE);
-        use(skybox_shader);
-        glBindVertexArray(cube_vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_id);
-        setInt(skybox_shader, "skybox", 0);
-        setViewMatrix(cam, skybox_shader, "view");
-        setProjectionMatrix(cam, skybox_shader, "projection");
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glDepthMask(GL_TRUE);
-
         /* depth mapping */
         float far_plane = 10.f;
         light_shadow_cube_mat(&light, 1.f, far_plane);
@@ -452,6 +440,20 @@ int main(){
         setFloat(model_shader, "far_plane", far_plane);
         light_to_shader(&light, model_shader);
         draw_model(model_shader, backpack);
+
+        /* skybox */
+        glDepthFunc(GL_LEQUAL);
+        //glDepthMask(GL_FALSE);
+        use(skybox_shader);
+        glBindVertexArray(cube_vao);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_id);
+        setInt(skybox_shader, "skybox", 0);
+        setViewMatrix(cam, skybox_shader, "view");
+        setProjectionMatrix(cam, skybox_shader, "projection");
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -409,6 +409,7 @@ int main(){
         setProjectionMatrix(cam, model_shader, "projection");
         setMat4x4(model_shader, "model_matrix", model_matrix);
         setMat4x4(model_shader, "normal_matrix", normal_matrix);
+        setVec3(model_shader, "camera_position", *cam->position);
         int max_texture_units;
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
         int texture_unit = cached_texture_count(backpack);
@@ -417,7 +418,14 @@ int main(){
             glBindTexture(GL_TEXTURE_CUBE_MAP, light.depth_texture);
 
         } else{
-            err_print("Not enough texture units. omg");
+            err_print("Not enough texture units for point light cube map");
+        }
+        if (texture_unit+1 < max_texture_units){
+            glActiveTexture(GL_TEXTURE0 + texture_unit + 1);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_id);
+            setInt(model_shader, "skybox", texture_unit+1);
+        } else{
+            err_print("Not enough texture units for skybox");
         }
         /* Note: This is a bit confusing.
          * On the host side the light struct has just one texture entry

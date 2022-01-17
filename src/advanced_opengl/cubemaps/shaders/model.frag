@@ -149,24 +149,24 @@ float shadow_calculation_cube(Light light, vec3 normal)
 vec3 calc_point_light(Light light, vec3 fragment_position, vec3 normal)
 {
     float shininess_correction;
-    vec3 material_texture = texture(material.texture_diffuse1,
+    vec3 material_diffuse = texture(material.texture_diffuse1,
                                     texture_coordinates).rgb;
     /* Tutorial has -light_direction here. 
      * Drawing seems to indicate it should just be light_direction.
      */
-    vec3 normal_texture = texture(material.texture_normal1,
+    vec3 material_normal = texture(material.texture_normal1,
                                   texture_coordinates).rgb;
-    normal_texture = normalize(2.0 * normal_texture - vec3(1.0));
+    material_normal = normalize(2.0 * material_normal - vec3(1.0));
 
-    vec3 ambient = light.ambient * material_texture;
-    float diff = max(dot(normal_texture, light_direction), 0.0);
-    vec3 diffuse = light.diffuse * diff * material_texture;
+    vec3 ambient = light.ambient * material_diffuse;
+    float diff = max(dot(material_normal, light_direction), 0.0);
+    vec3 diffuse = light.diffuse * diff * material_diffuse;
     vec3 avg_direction = normalize(light_direction + view_direction);
     /* Blinn-Phong mode */
     shininess_correction = (8.0 + ksh) / (8.0 * pi);
     /* Phong */
     //shininess_correction = (2.0 + ksh) / (2.0 * pi);
-    float spec = pow(max(dot(normal_texture, avg_direction), 0.0),
+    float spec = pow(max(dot(material_normal, avg_direction), 0.0),
                      material.shininess);
     spec *= shininess_correction;
     vec3 specular = light.specular * spec * \
@@ -175,7 +175,7 @@ vec3 calc_point_light(Light light, vec3 fragment_position, vec3 normal)
     float distance = length(light.position - fragment_position);
     float attenuation = 1.0 / (light.constant + light.linear * distance + \
                                light.quadratic * (distance * distance));
-    float shadow = shadow_calculation_cube(light, normal);
+    float shadow = shadow_calculation_cube(light, material_normal);
     ambient *= attenuation;
     diffuse *= (1.0 - shadow) * attenuation;
     specular *= (1.0 - shadow) * attenuation;
@@ -216,12 +216,37 @@ vec3 calc_spotlight(Light light, vec3 normal, vec3 fragment_position,
 }
 
 
+vec4 calc_reflections(vec3 normal, vec3 fragment_position)
+{
+    vec3 frag_to_cam = camera_position - fragment_position;
+    vec3 reflect_direction = reflect(frag_to_cam, normal);
+    return texture(skybox, -reflect_direction);
+}
+
+
+vec4 calc_refraction(vec3 normal, vec3 fragment_position,
+                     float refractive_index)
+{
+    float ratio = 1.0 / refractive_index;
+    vec3 cam_to_frag = fragment_position - camera_position;
+    vec3 refract_direction = refract(cam_to_frag, normal, ratio);
+    return texture(skybox, refract_direction);
+}
+
+
 void main(){
     vec3 normalized_normal = normalize(normal);
-    vec3 total;
+    vec3 light_effects;
+    vec3 material_normal = texture(material.texture_normal1,
+                                  texture_coordinates).rgb;
+    material_normal = normalize(2.0 * material_normal - vec3(1.0));
+    float refractive_index = 1.52;
 
-    total = calc_point_light(point_light, fragment_position,
-                             normalized_normal);
-	frag_color = texture(material.texture_diffuse1, texture_coordinates) * \
-                 vec4(total, 1.0);
+    light_effects = calc_point_light(point_light, fragment_position,
+                                     normalized_normal);
+	frag_color = texture(material.texture_diffuse1, texture_coordinates);
+    frag_color *= calc_reflections(normalized_normal, fragment_position);
+    //frag_color = calc_refraction(normalized_normal, fragment_position,
+    //                             refractive_index);
+    frag_color *= vec4(light_effects, 1.0);
 }

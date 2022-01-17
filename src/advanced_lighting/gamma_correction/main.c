@@ -354,6 +354,7 @@ int main(){
     /* Almost forgot this is anti-aliased */
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     float glfw_loop_start_time = (float)glfwGetTime();
 
     while (!glfwWindowShouldClose(window)){

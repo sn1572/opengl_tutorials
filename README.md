@@ -11,4 +11,4 @@ Only a few dependencies are required which are not packaged with this project.
 
 ## Credit to Other Projects
 
-stb.h and linmath.h are packaged with this repo (for the sake of simplicity). These can always be updated by visiting the relevant project pages and copying new versions of these headers into this repo. See https://github.com/nothings/stb and https://github.com/datenwolf/linmath.h.git.
+stb.h and linmath.h are included as submodules with this repo. The relevant project pages are [here](https://github.com/nothings/stb) and [here](https://github.com/datenwolf/linmath.h.git).

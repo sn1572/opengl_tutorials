@@ -1,0 +1,8 @@
+[submodule "headers/stb"]
+	path = headers/stb
+	url = https://github.com/nothings/stb
+    update = rebase
+[submodule "headers/linmath.h"]
+	path = headers/linmath.h
+	url = https://github.com/datenwolf/linmath.h.git
+    update = rebase

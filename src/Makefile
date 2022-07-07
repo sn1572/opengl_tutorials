@@ -1,7 +1,7 @@
 GREEN = \033[0;32m
 NC = \033[0m
 CC = gcc
-headers = ../headers
+headers = -I../headers -I../headers/linmath.h -I../headers/stb -I../headers/stb/deprecated
 lib_dir = ../lib
 solibs = ../lib/libshader.so ../lib/libcamera.so ../lib/libmodel.so ../lib/liblight.so
 glad_install_dir = /opt/glad
@@ -17,7 +17,7 @@ $(lib_dir)/libglad.so: $(glad_install_dir)/src/glad.c
 	$(CC) -shared -o $@ glad.o
 
 $(solibs): ../lib/lib%.so: %.c ../headers/%.h $(lib_dir)/libglad.so
-	$(CC) -g -c -fpic -I$(headers) -DSHADER_DEBUG \
+	$(CC) -g -c -fpic $(headers) -DSHADER_DEBUG \
 		-I$(assimp_include_dir) -DMODEL_DEBUG \
 		-I$(assimp_config_dir) \
 		-I$(glad_install_dir)/include -o $<.o $<

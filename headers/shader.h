@@ -4,7 +4,7 @@
     #include <glad/glad.h>
     #include <stdio.h>
     #include <stdlib.h>
-    #include "linmath.h"
+    #include <linmath.h>
 
     typedef enum {
         SHADER_NO_ERR   =  0,

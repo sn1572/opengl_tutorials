@@ -4,10 +4,10 @@ CC = gcc
 headers = -I../headers -I../headers/linmath.h -I../headers/stb -I../headers/stb/deprecated
 lib_dir = ../lib
 solibs = ../lib/libshader.so ../lib/libcamera.so ../lib/libmodel.so ../lib/liblight.so
-glad_install_dir = /opt/glad
-assimp_include_dir = /home/markbolding/Documents/assimp-5.0.1/include
-assimp_config_dir = /home/markbolding/Documents/assimp-5.0.1/build/include
-assimp_lib_dir = /home/markbolding/Documents/assimp-5.0.1/build/code
+glad_install_dir = ${GLAD_DIR}
+assimp_include_dir = ${ASSIMP_DIR}/include
+assimp_config_dir = ${ASSIMP_DIR}/include
+assimp_lib_dir = ${ASSIMP_DIR}/code
 
 all: $(solibs)
 
